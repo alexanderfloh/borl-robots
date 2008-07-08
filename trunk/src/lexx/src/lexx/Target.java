@@ -10,7 +10,7 @@ import robocode.AdvancedRobot;
 import robocode.ScannedRobotEvent;
 
 public class Target {
-  private static final int ROBOT_SIZE = 36;
+  
   private final AdvancedRobot robot;
   private final String targetName;
   private double headingRadians;
@@ -30,8 +30,8 @@ public class Target {
     this.targetName = event.getName();
     
     this.rectangle = new Rectangle2D.Double();
-    rectangle.height = ROBOT_SIZE;
-    rectangle.width = ROBOT_SIZE;
+    rectangle.height = DasBot.ROBOT_SIZE;
+    rectangle.width = DasBot.ROBOT_SIZE;
     
     update(event);
   }
@@ -49,19 +49,19 @@ public class Target {
     myPos = new Point2D.Double(robot.getX(), robot.getY());
     enemyPos = Utils.translate(myPos, bearingRadians, distance);
     
-    rectangle.x = enemyPos.x - ROBOT_SIZE / 2;
-    rectangle.y = enemyPos.y - ROBOT_SIZE / 2;
+    rectangle.x = enemyPos.x - DasBot.ROBOT_SIZE / 2;
+    rectangle.y = enemyPos.y - DasBot.ROBOT_SIZE / 2;
     
   }
 
-  public double projectBearingRadians(double power) {
+  public double projectBearingRadians(double power, double velocityFactor) {
     double ticks = ticksToTarget(power);
 
-    Point2D.Double projectedPos = Utils.translate(enemyPos, headingRadians, ticks * velocity);
+    Point2D.Double projectedPos = Utils.translate(enemyPos, headingRadians, ticks * (velocity * velocityFactor));
 
     double relPosX = projectedPos.x - myPos.x;
     double relPosY = projectedPos.y - myPos.y;
-    double projectedDistance = getProjectedDistance(relPosX, relPosY);
+    double projectedDistance = myPos.distance(projectedPos);
 
     double projectedBearing = getProjectedBearing(relPosX, relPosY, projectedDistance);
     return projectedBearing;
@@ -84,7 +84,7 @@ public class Target {
     double ticks = 50; // TODO hardcoded
     double requiredVelocity = distance / ticks;
     double power = (20 - requiredVelocity) / 3;
-    return power;
+    return Math.min(3, power);
   }
   
   public Rectangle2D.Double getRectangle() {
@@ -102,12 +102,12 @@ public class Target {
 
     double relPosX = projectedPos.x - myPos.x;
     double relPosY = projectedPos.y - myPos.y;
-    double projectedDistance = getProjectedDistance(relPosX, relPosY);
+    double projectedDistance = myPos.distance(projectedPos);
 
     double projectedBearing = getProjectedBearing(relPosX, relPosY, projectedDistance);
-    double projectedBearingX = myPos.x + (Math.sin(projectedBearing) * projectedDistance);
-    double projectedBearingY = myPos.y + (Math.cos(projectedBearing) * projectedDistance);
-    g.drawLine((int) myPos.x, (int) myPos.y, (int) projectedBearingX, (int) projectedBearingY);
+    Point2D.Double projectedBearingPos = Utils.translate(myPos, projectedBearing, projectedDistance);
+    Line2D.Double l2 = new Line2D.Double(myPos, projectedBearingPos);
+    g.draw(l2);
   }
 
   public double getHeadingRadians() {
@@ -140,11 +140,6 @@ public class Target {
     double bulletVelocity = 20 - (3 * power);
     double ticks = (distance / bulletVelocity);
     return ticks;
-  }
-
-  private double getProjectedDistance(double relPosX, double relPosY) {
-    double projectedDistance = Math.sqrt(relPosX * relPosX + relPosY * relPosY);
-    return projectedDistance;
   }
 
   private double getEnemyBearingRadians(double originalBearingRadians, double myHeadingRadians) {

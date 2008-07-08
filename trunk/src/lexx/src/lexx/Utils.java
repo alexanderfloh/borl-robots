@@ -10,4 +10,14 @@ public class Utils {
     
     return result;
   }
+  
+  public static double powerToVelocity(double power) {
+    double bulletVelocity = 20 - (3 * power);
+    return bulletVelocity;
+  }
+  
+  public static double velocityToPower(double velocity) {
+    double power = (20 - velocity) / 3;
+    return power;
+  }
 }
