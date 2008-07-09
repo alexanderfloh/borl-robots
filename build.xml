@@ -1,0 +1,43 @@
+<project name="Borland Robots" default="dist">
+	<!--
+		uses the following properties:
+		- lib.robocode:			the robocode library
+		-->
+
+	<property name="project.build" value="${basedir}/bin" />
+	<property name="project.dist" value="${basedir}/dist" />
+	<property name="project.src" value="${basedir}/src" />
+
+	<path id="project.classpath">
+		<fileset dir="${robocode}">
+			<include name="**/libs/*.jar" />
+		</fileset>
+	</path>
+
+	<!-- TARGETS -->
+
+	<target name="compile" description="compile the source">
+		<mkdir dir="${project.build}" />
+		<!-- Compile the java code from ${project.src} into ${project.build} -->
+		<javac destdir="${project.build}" fork="no" debug="true">
+			<src path="${project.src}" />
+			<classpath refid="project.classpath" />
+		</javac>
+		<copy todir="${project.build}">
+			<fileset dir="${project.src}/">
+				<include name="**/*.properties" />
+			</fileset>
+		</copy>
+	</target>
+
+	<target name="dist" depends="clean, compile" description="generate the distribution">
+		<mkdir dir="${project.dist}" />
+
+		<jar destfile="${project.dist}/borl_robots.jar" basedir="${project.build}" />
+	</target>
+
+	<target name="clean" description="clean up">
+		<delete dir="${project.build}" quiet="true" />
+		<delete dir="${project.dist}" quiet="true" />
+	</target>
+</project>
