@@ -1,9 +1,8 @@
 package g;
 
-import static g.Utils.normalizeAngle;
-import static java.lang.Math.abs;
-import static java.lang.Math.max;
-import static java.lang.Math.min;
+import static g.Utils.*;
+import static robocode.util.Utils.*;
+import static java.lang.Math.*;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -113,7 +112,7 @@ public class TehGeckBot extends AdvancedRobot {
 		double gunTurnRemaining = abs(getGunTurnRemaining());
 		if (getEnergy() < 10) {
 			// our last shots - only fire if we kill our target for sure
-			if (gunTurnRemaining == 0 && target.exists() && target.getEnergy() == 0) {
+			if (isNear(gunTurnRemaining, 0) && target.exists() && isNear(target.getEnergy(), 0)) {
 				setFire(bulletPower);
 				println("firing last bullet at disabled target");
 			}
@@ -170,7 +169,7 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private boolean isBetterTarget(ScannedRobotEvent e) {
-		if (e.getEnergy() == 0)
+		if (isNear(e.getEnergy(), 0))
 			return true;
 		return e.getDistance() < target.getDistance();
 	}

@@ -3,6 +3,7 @@ package g;
 import static g.Utils.absoluteDirection;
 import static g.Utils.bulletSpeed;
 import static g.Utils.normalizeAngle;
+import static robocode.util.Utils.isNear;
 
 import java.awt.geom.Point2D;
 
@@ -32,7 +33,7 @@ public class AimingStrategy {
 	}
 
 	public void useNewLinearTargetingFactor() {
-		if (linarTargetingFactor == 1)
+		if (isNear(linarTargetingFactor, 1))
 			linarTargetingFactor = 0;
 		else
 			linarTargetingFactor = 1;
