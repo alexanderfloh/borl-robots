@@ -56,7 +56,6 @@ public class GunManager {
   
   private static class SimpleGunComparator implements Comparator<VirtualGun> {
 
-    @Override
     public int compare(VirtualGun o1, VirtualGun o2) {
       return o1.getBulletsHit() - o2.getBulletsHit();
     }
