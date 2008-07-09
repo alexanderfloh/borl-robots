@@ -41,6 +41,10 @@ public abstract class VirtualGun {
     }
   }
   
+  public final void updateTarget(Target target) {
+    this.target = target;
+  }
+  
   public int getBulletsFired() {
     return bulletsFired;
   }

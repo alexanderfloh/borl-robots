@@ -1,5 +1,6 @@
 package lexx;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
@@ -48,6 +49,7 @@ public class TrackedBullet {
 
   public void onPaint(Graphics2D g) {
     Ellipse2D.Double bullet = new Ellipse2D.Double(currentPos.x - 5, currentPos.y - 5, 10, 10);
-    g.fill(bullet);
+    g.setColor(Color.WHITE);
+    g.draw(bullet);
   }
 }
