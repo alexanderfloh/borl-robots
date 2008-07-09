@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.awt.geom.Point2D.Double;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -18,22 +19,32 @@ import robocode.util.Utils;
 public class DasBot extends AdvancedRobot {
   public static final int ROBOT_SIZE = 36;
 
+  // this is our memory ;)
+  /* static */ private Map<String, GunManager> gunManagers;
+  
   private Target currentTarget;
+  private Map<String, Target> oldTargets = new LinkedHashMap<String, Target>();
   private GunManager gunManager;
+
   private int direction = 1;
   private int radarDirection = 1;
   private Random random = new Random();
   private double wallStick = 120;
   private Rectangle2D.Double battleField;
-  private Map<String, Target> oldTargets = new LinkedHashMap<String, Target>();
-
+  
+  public DasBot() {
+    if(gunManagers == null) {
+      gunManagers = new LinkedHashMap<String, GunManager>();
+    }
+  }
+  
   @Override
   public void run() {
-    setColors(Color.green, Color.green, Color.green, Color.magenta, Color.magenta);
-    if (battleField == null) {
+    if(battleField == null) {
       battleField = new Rectangle2D.Double(0, 0, getBattleFieldWidth(), getBattleFieldHeight());
+      setColors(new Color(0, 128, 0), Color.green, Color.gray, Color.magenta, Color.magenta);
     }
-
+    
     while (true) {
       // if the target hasnt been updated for 3 ticks, remove it.
       if (currentTarget != null && currentTarget.getTimeStamp() < getTime() - 3) {
@@ -83,7 +94,7 @@ public class DasBot extends AdvancedRobot {
         setAdjustRadarForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
 
-        setTurnRightRadians(turnRadians);
+        
         avoidWalls(turnRadians, headingRadians);
         setTurnGunRightRadians(turnGunRadians);
 
@@ -94,7 +105,7 @@ public class DasBot extends AdvancedRobot {
 
         if (getDistanceRemaining() == 0) {
           reverseDirection();
-          double distanceToMove = 60 * (1 + random.nextDouble()) * direction;
+          double distanceToMove = 100 * (1 + random.nextDouble()) * direction;
           setAhead(distanceToMove);
         }
       }
@@ -105,13 +116,15 @@ public class DasBot extends AdvancedRobot {
 
   private void avoidWalls(double turnRadians, double headingRadians) {
     double newHeading = headingRadians + turnRadians;
-    Point2D.Double p1 = new Point2D.Double(getX() + Math.cos(newHeading) * wallStick * direction, getY()
-        + Math.sin(newHeading) * wallStick * direction);
-
+    Double myPos = getPosition();
+    Point2D.Double p1 = lexx.Utils.translate(myPos, newHeading, wallStick * direction);
+    
     if (!battleField.contains(p1)) {
       reverseDirection();
       double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
       setAhead(distanceToMove);
+    } else {
+      setTurnRightRadians(turnRadians);
     }
   }
 
@@ -135,7 +148,7 @@ public class DasBot extends AdvancedRobot {
 
   @Override
   public void onHitWall(HitWallEvent event) {
-    // reverseDirection();
+    out.println("ouch, hit a wall!");
   }
 
   @Override
@@ -147,18 +160,37 @@ public class DasBot extends AdvancedRobot {
   public void onScannedRobot(ScannedRobotEvent event) {
     if (currentTarget == null) {
       currentTarget = new Target(this, event);
-      gunManager = new GunManager(this, currentTarget);
+      if(gunManagers.containsKey(event.getName())) {
+        gunManager = gunManagers.get(event.getName());
+        gunManager.updateTarget(currentTarget);
+      } else {
+        gunManager = new GunManager(this, currentTarget);
+        gunManagers.put(event.getName(), gunManager);
+      }
+      
     } else {
-      if (event.getName().equals(currentTarget.getTargetName())) {
+      String currentTargetName = currentTarget.getTargetName();
+      String newTargetName = event.getName();
+      
+      if (newTargetName.equals(currentTargetName)) {
         currentTarget.update(event);
       } else if (event.getDistance() < currentTarget.getDistance()) {
-        oldTargets.put(currentTarget.getTargetName(), currentTarget);
-        if (oldTargets.containsKey(event.getName())) {
-          currentTarget = oldTargets.get(event.getName());
+        oldTargets.put(currentTargetName, currentTarget);
+        
+        if (oldTargets.containsKey(newTargetName)) {
+          currentTarget = oldTargets.get(newTargetName);
+          gunManager = gunManagers.get(newTargetName);
           currentTarget.update(event);
+          
         } else {
           currentTarget = new Target(this, event);
-          gunManager = new GunManager(this, currentTarget);
+          if(gunManagers.containsKey(event.getName())) {
+            gunManager = gunManagers.get(event.getName());
+            gunManager.updateTarget(currentTarget);
+          } else {
+            gunManager = new GunManager(this, currentTarget);
+            gunManagers.put(event.getName(), gunManager);
+          }
         }
       }
     }

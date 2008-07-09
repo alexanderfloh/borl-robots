@@ -8,13 +8,11 @@ import java.util.List;
 
 public class GunManager {
   private List<VirtualGun> guns;
-  private Target target;
   private DasBot robot;
   
   private Comparator<VirtualGun> gunComparator = new SimpleGunComparator();
   
   public GunManager(DasBot robot, Target target) {
-    this.target = target;
     this.robot = robot;
     guns = new LinkedList<VirtualGun>();
     guns.add(new DirectGun(robot, target));
@@ -33,6 +31,12 @@ public class GunManager {
   public void update() {
     for (VirtualGun gun : guns) {
       gun.update();
+    }
+  }
+  
+  public void updateTarget(Target target) {
+    for (VirtualGun gun : guns) {
+      gun.updateTarget(target);
     }
   }
   
