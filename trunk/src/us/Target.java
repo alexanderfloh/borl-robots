@@ -1,5 +1,6 @@
 package us;
 
+import robocode.AdvancedRobot;
 import robocode.ScannedRobotEvent;
 
 /**
@@ -14,6 +15,10 @@ public class Target extends ScannedRobotEvent {
 	public Target(ScannedRobotEvent event) {
 		super(event.getName(), event.getEnergy(), event.getBearingRadians(), event.getDistance(), event
 				.getHeadingRadians(), event.getVelocity());
+	}
+	
+	public double getAbsoluteBearing(AdvancedRobot bot) {
+		return Utils.normalizeAngle(getBearing() + bot.getHeading());
 	}
 
 	@Override
