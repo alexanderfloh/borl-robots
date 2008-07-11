@@ -1,11 +1,12 @@
 package lexx;
 
+import java.awt.geom.Point2D;
+import java.awt.geom.Point2D.Double;
+
 public class LinearGun extends VirtualGun {
-  private double velocityFactor;
   
-  protected LinearGun(DasBot robot, Target target, double velocityFactor) {
+  protected LinearGun(DasBot robot, Target target) {
     super(robot, target);
-    this.velocityFactor = velocityFactor;
   }
 
   @Override
@@ -15,7 +16,7 @@ public class LinearGun extends VirtualGun {
 
   @Override
   protected double getTargetHeadingRadians() {
-    return target.projectBearingRadians(getPower(), velocityFactor);
+    return projectBearingRadians(getPower(), 1);
   }
 
   @Override
@@ -23,9 +24,21 @@ public class LinearGun extends VirtualGun {
     
   }
   
-  @Override
-  public String toString() {
-    return super.toString() + " velocityFactor " + velocityFactor;
-  }
+  private double projectBearingRadians(double power, double velocityFactor) {
+    double ticks = ticksToTarget(power);
 
+    Point2D.Double projectedPos = Utils.translate(target.getEnemyPos(), target.getHeadingRadians(), ticks * (target.getVelocity() * velocityFactor));
+
+    Double myPosition = robot.getPosition();
+    double relPosX = projectedPos.x - myPosition.x;
+    double relPosY = projectedPos.y - myPosition.y;
+    double projectedDistance = myPosition.distance(projectedPos);
+
+    double projectedBearing = Utils.getBearingForPointRadians(relPosX, relPosY, projectedDistance);
+    return projectedBearing;
+  }
+  
+  private double ticksToTarget(double power) {
+    return (target.getDistance() / Utils.powerToVelocity(power));
+  }
 }

@@ -15,17 +15,17 @@ public class GunManager {
   public GunManager(DasBot robot, Target target) {
     this.robot = robot;
     guns = new LinkedList<VirtualGun>();
-    guns.add(new DirectGun(robot, target));
-    guns.add(new LinearGun(robot, target, -1.0));
-    guns.add(new LinearGun(robot, target, -0.8));
-    guns.add(new LinearGun(robot, target, -0.6));
-    guns.add(new LinearGun(robot, target, -0.4));
-    guns.add(new LinearGun(robot, target, -0.2));
-    guns.add(new LinearGun(robot, target, 0.2));
-    guns.add(new LinearGun(robot, target, 0.4));
-    guns.add(new LinearGun(robot, target, 0.6));
-    guns.add(new LinearGun(robot, target, 0.8));
-    guns.add(new LinearGun(robot, target, 1));
+    guns.add(new LinearGun(robot, target));
+//    guns.add(new DirectGun(robot, target, -1.0));
+    guns.add(new DirectGun(robot, target, -0.8));
+//    guns.add(new DirectGun(robot, target, -0.6));
+//    guns.add(new DirectGun(robot, target, -0.4));
+    guns.add(new DirectGun(robot, target, -0.2));
+    guns.add(new DirectGun(robot, target, 0));
+    guns.add(new DirectGun(robot, target, 0.2));
+//    guns.add(new DirectGun(robot, target, 0.4));
+    guns.add(new DirectGun(robot, target, 0.6));
+//    guns.add(new DirectGun(robot, target, 0.8));
   }
   
   public void update() {
@@ -49,15 +49,25 @@ public class GunManager {
   public VirtualGun getBestGun() {
     Collections.sort(guns, gunComparator);
     robot.out.println(guns);
-    VirtualGun bestGun = guns.get(guns.size() - 1);
-    return bestGun;
+    return guns.get(0);
   }
   
   
   private static class SimpleGunComparator implements Comparator<VirtualGun> {
 
     public int compare(VirtualGun o1, VirtualGun o2) {
-      return o1.getBulletsHit() - o2.getBulletsHit();
+      if(hitQuotient(o1) < hitQuotient(o2))
+        return 1;
+      else if(hitQuotient(o1) > hitQuotient(o2))
+        return -1;
+      else
+        return 0;
+    }
+    
+    private double hitQuotient(VirtualGun g) {
+      if(g.getBulletsFired() == 0)
+        return 0;
+      return g.getBulletsHit() / g.getBulletsFired();
     }
     
   }
