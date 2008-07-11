@@ -11,6 +11,16 @@ public class Utils {
     return result;
   }
   
+  public static double getBearingForPointRadians(double deltaX, double deltaY, double distance) {
+    double bearing;
+    if (deltaY >= 0) {
+      bearing = Math.asin(deltaX / distance);
+    } else {
+      bearing = Math.PI - Math.asin(deltaX / distance);
+    }
+    return bearing;
+  }
+  
   public static double powerToVelocity(double power) {
     double bulletVelocity = 20 - (3 * power);
     return bulletVelocity;

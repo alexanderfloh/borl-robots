@@ -18,10 +18,11 @@ import robocode.util.Utils;
 
 public class DasBot extends AdvancedRobot {
   public static final int ROBOT_SIZE = 36;
+  public static final double MAX_SPEED = 8;
 
   // this is our memory ;)
-  /* static */ private Map<String, GunManager> gunManagers;
-  
+  private Map<String, GunManager> gunManagers;
+
   private Target currentTarget;
   private Map<String, Target> oldTargets = new LinkedHashMap<String, Target>();
   private GunManager gunManager;
@@ -31,20 +32,20 @@ public class DasBot extends AdvancedRobot {
   private Random random = new Random();
   private double wallStick = 120;
   private Rectangle2D.Double battleField;
-  
+
   public DasBot() {
-    if(gunManagers == null) {
+    if (gunManagers == null) {
       gunManagers = new LinkedHashMap<String, GunManager>();
     }
   }
-  
+
   @Override
   public void run() {
-    if(battleField == null) {
+    if (battleField == null) {
       battleField = new Rectangle2D.Double(0, 0, getBattleFieldWidth(), getBattleFieldHeight());
       setColors(new Color(0, 128, 0), Color.green, Color.gray, Color.magenta, Color.magenta);
     }
-    
+
     while (true) {
       // if the target hasnt been updated for 3 ticks, remove it.
       if (currentTarget != null && currentTarget.getTimeStamp() < getTime() - 3) {
@@ -58,33 +59,30 @@ public class DasBot extends AdvancedRobot {
       }
 
       if (currentTarget != null && gunManager != null) {
-//        double maxFirePower = currentTarget.getMaxFirePower();
-//        double actualPower = random.nextDouble() * maxFirePower;
-//        double projectedBearingRadians = currentTarget.projectBearingRadians(actualPower);
-//        
         gunManager.update();
         VirtualGun bestGun = gunManager.getBestGun();
-        out.println("Using gun: " + bestGun.getClass() + " with " + bestGun.getBulletsHit() + " hits.");
+        out.println("Using gun: " + bestGun);
         double maxFirePower = bestGun.getPower();
         double projectedBearingRadians = bestGun.getTargetHeadingRadians();
-        
 
         // moving
         double headingRadians = getHeadingRadians();
         double turnRadians = getTurnRadians(currentTarget.getBearingRadians(), headingRadians);
-        // turnRadians = checkForWalls(turnRadians, headingRadians);
+        doMove(turnRadians, headingRadians);
 
         // shooting
         double turnGunRadians = Utils.normalRelativeAngle((projectedBearingRadians - getGunHeadingRadians()));
+        setTurnGunRightRadians(turnGunRadians);
 
         // scanning
-        double turnRadarRadians = Utils.normalRelativeAngle(currentTarget.getBearingRadians() - getRadarHeadingRadians());
+        double turnRadarRadians = Utils.normalRelativeAngle(currentTarget.getBearingRadians()
+            - getRadarHeadingRadians());
 
         if (Math.abs(turnGunRadians) < Math.PI / 100) {
           if (maxFirePower < 0.1) {
             // TODO: get closer to the target
           } else {
-            if(Utils.isNear(getGunHeat(), 0)) {
+            if (Utils.isNear(getGunHeat(), 0)) {
               setFireBullet(maxFirePower);
               gunManager.trackFire();
             }
@@ -94,38 +92,53 @@ public class DasBot extends AdvancedRobot {
         setAdjustRadarForRobotTurn(true);
         setAdjustRadarForGunTurn(true);
 
-        
-        avoidWalls(turnRadians, headingRadians);
-        setTurnGunRightRadians(turnGunRadians);
 
         if (getRadarTurnRemainingRadians() == 0) {
           setTurnRadarRightRadians(turnRadarRadians + ((Math.PI / 12) * radarDirection));
           radarDirection *= -1;
         }
 
-        if (getDistanceRemaining() == 0) {
-          reverseDirection();
-          double distanceToMove = 100 * (1 + random.nextDouble()) * direction;
-          setAhead(distanceToMove);
-        }
       }
 
       execute();
     }
   }
 
-  private void avoidWalls(double turnRadians, double headingRadians) {
+  private void doMove(double turnRadians, double headingRadians) {
     double newHeading = headingRadians + turnRadians;
     Double myPos = getPosition();
-    Point2D.Double p1 = lexx.Utils.translate(myPos, newHeading, wallStick * direction);
-    
-    if (!battleField.contains(p1)) {
-      reverseDirection();
-      double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
-      setAhead(distanceToMove);
-    } else {
-      setTurnRightRadians(turnRadians);
-    }
+    Point2D.Double p1 = lexx.Utils.translate(myPos, newHeading, (getVelocity() + wallStick) * direction);
+
+//    if (getOthers() > 1) {
+//      if(!battleField.contains(p1)) {
+//        if(battleField.contains(lexx.Utils.translate(myPos, newHeading + Math.PI / 2, (getVelocity() + wallStick) * direction))) {
+//          setTurnRightRadians(newHeading + Math.PI / 2);
+//        }
+//        else {
+//          setTurnRightRadians(newHeading - Math.PI / 2);
+//        }
+//      }
+//      if (Utils.isNear(getTurnRemaining(), 0)) {
+//        setTurnRightRadians(random.nextDouble() * Math.PI - Math.PI / 2);
+//      }
+//      // if (Utils.isNear(getDistanceRemaining(), 0)) {
+//      setAhead(50 * direction);
+//      // }
+//    } else {
+      if (!battleField.contains(p1)) {
+        reverseDirection();
+        double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
+        setAhead(distanceToMove);
+      } else {
+        setTurnRightRadians(turnRadians);
+
+        if (getDistanceRemaining() == 0) {
+          reverseDirection();
+          double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
+          setAhead(distanceToMove);
+        }
+      }
+//    }
   }
 
   private void reverseDirection() {
@@ -160,31 +173,31 @@ public class DasBot extends AdvancedRobot {
   public void onScannedRobot(ScannedRobotEvent event) {
     if (currentTarget == null) {
       currentTarget = new Target(this, event);
-      if(gunManagers.containsKey(event.getName())) {
+      if (gunManagers.containsKey(event.getName())) {
         gunManager = gunManagers.get(event.getName());
         gunManager.updateTarget(currentTarget);
       } else {
         gunManager = new GunManager(this, currentTarget);
         gunManagers.put(event.getName(), gunManager);
       }
-      
+
     } else {
       String currentTargetName = currentTarget.getTargetName();
       String newTargetName = event.getName();
-      
+
       if (newTargetName.equals(currentTargetName)) {
         currentTarget.update(event);
       } else if (event.getDistance() < currentTarget.getDistance()) {
         oldTargets.put(currentTargetName, currentTarget);
-        
+
         if (oldTargets.containsKey(newTargetName)) {
           currentTarget = oldTargets.get(newTargetName);
           gunManager = gunManagers.get(newTargetName);
           currentTarget.update(event);
-          
+
         } else {
           currentTarget = new Target(this, event);
-          if(gunManagers.containsKey(event.getName())) {
+          if (gunManagers.containsKey(event.getName())) {
             gunManager = gunManagers.get(event.getName());
             gunManager.updateTarget(currentTarget);
           } else {
@@ -210,15 +223,15 @@ public class DasBot extends AdvancedRobot {
     if (currentTarget != null) {
       currentTarget.onPaint(g);
     }
-    if(gunManager != null) {
+    if (gunManager != null) {
       gunManager.onPaint(g);
     }
   }
-  
+
   public Point2D.Double getPosition() {
     return new Point2D.Double(getX(), getY());
   }
-  
+
   public Rectangle2D.Double getBattleField() {
     return battleField;
   }
