@@ -2,6 +2,10 @@ package g;
 
 import static java.lang.Math.*;
 
+import java.awt.Graphics2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Point2D.Double;
+
 public class Utils {
 	/**
 	 * @return an angle that is equal to given one and that is within the range [-180 .. 180]
@@ -20,5 +24,9 @@ public class Utils {
 
 	static double absoluteBearing(double x1, double y1, double x2, double y2) {
 		return toDegrees(atan2(x2 - x1, y2 - y1));
+	}
+
+	static void drawCircle(Graphics2D g, int radius, Point2D.Double center) {
+		g.drawOval((int) center.getX() - radius / 2, (int) center.getY() - radius / 2, radius, radius);
 	}
 }
