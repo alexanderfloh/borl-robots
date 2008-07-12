@@ -15,6 +15,7 @@ import robocode.AdvancedRobot;
 import robocode.Condition;
 import robocode.CustomEvent;
 import robocode.DeathEvent;
+import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
@@ -34,6 +35,8 @@ public class TehGeckBot extends AdvancedRobot {
 	private int strafeDirection = 1;
 	private int radarDirection = 1;
 
+	private long lastTimeTargetFired;
+
 	private final Target target = new Target(this);
 
 	private final Random random = new Random();
@@ -47,8 +50,6 @@ public class TehGeckBot extends AdvancedRobot {
 				searchForTarget();
 			} else {
 				turnRadarToTarget();
-				if (didTargetFire())
-					dodgeBullet();
 				move();
 				fight();
 			}
@@ -83,6 +84,16 @@ public class TehGeckBot extends AdvancedRobot {
 
 		};
 		addCustomEvent(closeToWallCondition);
+
+		Condition targetFired = new Condition("targetFired") {
+			@Override
+			public boolean test() {
+				if (!target.exists())
+					return false;
+				return target.getEnergyDelta() <= -0.1 && target.getEnergyDelta() >= -3;
+			}
+		};
+		addCustomEvent(targetFired);
 	}
 
 	private AimingStrategy getAimingStragegyForTarget(String targetName) {
@@ -105,7 +116,7 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private boolean isTargetScanTooOld() {
-		long scanAge = getTime() - target.getScanTime();
+		long scanAge = getTime() - target.getTimeStamp();
 		boolean tooOld = scanAge > maxScanAge;
 		if (tooOld)
 			println("scan too old (" + scanAge + " ticks). Searching for new target.");
@@ -124,16 +135,17 @@ public class TehGeckBot extends AdvancedRobot {
 		double bulletPower = bulletPower();
 		getAimingStragegyForTarget(target.getName()).aimAtTarget(target, bulletPower);
 		double gunTurnRemaining = abs(getGunTurnRemaining());
+
+		boolean shouldRamTarget = isOneOnOneFight() && target.exists() && target.getEnergy() < getEnergy()
+				&& getTime() - lastTimeTargetFired > 10;
+		if (shouldRamTarget) {
+			ramTarget();
+		}
 		if (getEnergy() < 10) {
-			if (isOneOnOneFight()) {
-				if (target.exists() && target.getEnergy() < getEnergy() && !didTargetFire())
-					ramTarget();
-			} else {
-				// our last shots - only fire if we kill our target for sure
-				if (isNear(gunTurnRemaining, 0) && target.exists() && isNear(target.getEnergy(), 0)) {
-					setFire(bulletPower);
-					println("firing last bullet at disabled target");
-				}
+			// our last shots - only fire if we kill our target for sure
+			if (isNear(gunTurnRemaining, 0) && target.exists() && isNear(target.getEnergy(), 0)) {
+				setFire(bulletPower);
+				println("firing last bullet at disabled target");
 			}
 		} else {
 			// fire if we are already in the right position
@@ -161,10 +173,12 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private void println(String string) {
-		// out.println(string);
+		out.println(string);
 	}
 
 	private double bulletPower() {
+		if (1 == 1)
+			return 0;
 		if (target.getEnergy() <= 12)
 			return target.getEnergy() / 4.0;
 		return max(1.1, (min(3.0, 1200 / target.getDistance())));
@@ -209,6 +223,9 @@ public class TehGeckBot extends AdvancedRobot {
 				setAhead(150 * strafeDirection);
 			}
 			lastCloseToWallEventTime = getTime();
+		} else if (event.getCondition().getName().equals("targetFired")) {
+			dodgeBullet();
+			lastTimeTargetFired = getTime();
 		}
 	}
 
@@ -237,6 +254,14 @@ public class TehGeckBot extends AdvancedRobot {
 		if (isOneOnOneFight()) {
 			getAimingStragegyForTarget(target.getName()).failed();
 		}
+	}
+
+	@Override
+	public void onHitRobot(HitRobotEvent event) {
+		setTurnRadarRight(normalizeAngle(getHeading() + event.getBearing() - getRadarHeading()));
+		setTurnGunRight(normalizeAngle(getHeading() + event.getBearing()));
+		setFire(3);
+		execute();
 	}
 
 	private void changeStrafeDirection() {

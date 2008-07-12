@@ -13,7 +13,7 @@ public class Target {
 	private double distance;
 	private double bearing;
 	private double energy;
-	private long scanTime;
+	private long timeStamp;
 	private double velocity;
 	private String name = "";
 	private double heading;
@@ -34,7 +34,7 @@ public class Target {
 		distance = scanEvent.getDistance();
 		myHeading = geckBot.getHeading();
 		bearing = scanEvent.getBearing();
-		scanTime = scanEvent.getTime();
+		timeStamp = scanEvent.getTime();
 		velocity = scanEvent.getVelocity();
 		name = scanEvent.getName();
 		heading = scanEvent.getHeading();
@@ -82,8 +82,8 @@ public class Target {
 		return energy;
 	}
 
-	public long getScanTime() {
-		return scanTime;
+	public long getTimeStamp() {
+		return timeStamp;
 	}
 
 	public double getVelocity() {

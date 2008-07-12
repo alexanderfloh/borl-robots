@@ -3,7 +3,9 @@ package g;
 import static g.Utils.*;
 import static robocode.util.Utils.*;
 
+import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Point2D.Double;
 
 import robocode.AdvancedRobot;
 
@@ -13,6 +15,7 @@ public class AimingStrategy {
 	private int success = 0;
 	private double linarTargetingFactor = 1.0;
 	private final String targetName;
+	private Double lastFuturePosition;
 
 	public AimingStrategy(TehGeckBot geckBot, String targetName) {
 		this.geckBot = geckBot;
@@ -24,9 +27,7 @@ public class AimingStrategy {
 	public void aimAtTarget(Target target, double bulletPower) {
 		// distance = bulletspeed * ticks
 		long ticks = (long) (target.getDistance() / bulletSpeed(bulletPower));
-
 		Point2D.Double futurePosition = target.futurePosition(ticks, linarTargetingFactor);
-		TehGeckBot.lastFuturePosition = futurePosition;
 		double absoluteBearing = absoluteBearing(geckBot.getX(), geckBot.getY(), futurePosition.x, futurePosition.y);
 		geckBot.setTurnGunRight(normalizeAngle(absoluteBearing - geckBot.getGunHeading()));
 	}
@@ -50,5 +51,9 @@ public class AimingStrategy {
 				linarTargetingFactor = 0;
 		}
 		geckBot.out.println(" changing aiming strategy for " + targetName + " to factor " + linarTargetingFactor + "!");
+	}
+
+	public void onPaint(Graphics2D g) {
+
 	}
 }
