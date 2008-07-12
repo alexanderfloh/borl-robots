@@ -1,6 +1,5 @@
 package g;
 
-import static g.Utils.*;
 import static java.lang.Math.*;
 
 import java.awt.geom.Point2D;
@@ -19,15 +18,22 @@ public class Target {
 	private String name = "";
 	private double heading;
 	private Point2D.Double position;
+	private double energyDelta;
+	private double myHeading;
 
 	public Target(Robot me) {
 		this.geckBot = me;
 	}
 
 	public void update(ScannedRobotEvent scanEvent) {
-		distance = scanEvent.getDistance();
-		bearing = scanEvent.getBearing();
+		if (scanEvent.getName().equals(name))
+			energyDelta = scanEvent.getEnergy() - energy;
+		else
+			energyDelta = 0;
 		energy = scanEvent.getEnergy();
+		distance = scanEvent.getDistance();
+		myHeading = geckBot.getHeading();
+		bearing = scanEvent.getBearing();
 		scanTime = scanEvent.getTime();
 		velocity = scanEvent.getVelocity();
 		name = scanEvent.getName();
@@ -36,7 +42,7 @@ public class Target {
 	}
 
 	private Point2D.Double calculatePosition() {
-		double absoluteBearing = normalizeAngle(bearing + geckBot.getHeading());
+		double absoluteBearing = myHeading + bearing;
 		double x = geckBot.getX() + sin(toRadians(absoluteBearing)) * distance;
 		double y = geckBot.getY() + cos(toRadians(absoluteBearing)) * distance;
 		return new Point2D.Double(x, y);
@@ -72,10 +78,6 @@ public class Target {
 		return distance;
 	}
 
-	public double getBearing() {
-		return bearing;
-	}
-
 	public double getEnergy() {
 		return energy;
 	}
@@ -98,6 +100,18 @@ public class Target {
 
 	public Point2D.Double getPosition() {
 		return position;
+	}
+
+	public double getMyHeading() {
+		return myHeading;
+	}
+
+	public double getBearing() {
+		return bearing;
+	}
+
+	public double getEnergyDelta() {
+		return energyDelta;
 	}
 
 }
