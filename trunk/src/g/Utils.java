@@ -4,13 +4,12 @@ import static java.lang.Math.*;
 
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Point2D.Double;
 
 public class Utils {
 	/**
 	 * @return an angle that is equal to given one and that is within the range [-180 .. 180]
 	 */
-	static double normalizeAngle(double direction) {
+	static double normalizeRelativeAngle(double direction) {
 		while (direction < -180)
 			direction += 360;
 		while (direction > 180)
@@ -22,7 +21,7 @@ public class Utils {
 		return 20 - max(3, bulletPower) * 3;
 	}
 
-	static double absoluteBearing(double x1, double y1, double x2, double y2) {
+	static double absoluteBearingDegrees(double x1, double y1, double x2, double y2) {
 		return toDegrees(atan2(x2 - x1, y2 - y1));
 	}
 
