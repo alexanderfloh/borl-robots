@@ -17,7 +17,7 @@ import robocode.util.Utils;
 public class DasBot extends AdvancedRobot {
   public static final int ROBOT_SIZE = 36;
   public static final double MAX_SPEED = 8;
-  
+
   private static TargetManager targetManager;
 
   private int direction = 1;
@@ -27,9 +27,10 @@ public class DasBot extends AdvancedRobot {
   private Rectangle2D.Double battleField;
 
   public DasBot() {
-    if(targetManager == null) {
+    if (targetManager == null) {
       targetManager = new TargetManager(this);
     }
+    targetManager.startRound();
   }
 
   @Override
@@ -41,10 +42,12 @@ public class DasBot extends AdvancedRobot {
 
     while (true) {
       // if the target hasnt been updated for 3 ticks, remove it.
-//      if (targetManager.getCurrentTarget() != null && targetManager.getCurrentTarget().getTimeStamp() < getTime() - 3) {
-//        currentTarget = null;
-//      }
+      // if (targetManager.getCurrentTarget() != null &&
+      // targetManager.getCurrentTarget().getTimeStamp() < getTime() - 3) {
+      // currentTarget = null;
+      // }
 
+      targetManager.update();
       if (targetManager.getCurrentTarget() == null) {
         setAdjustRadarForGunTurn(false);
         setAdjustRadarForRobotTurn(false);
@@ -52,7 +55,6 @@ public class DasBot extends AdvancedRobot {
       }
 
       if (targetManager.getCurrentTarget() != null) {
-        targetManager.update();
         VirtualGun bestGun = targetManager.getCurrentGunManager().getBestGun();
         out.println("Using gun: " + bestGun);
         double maxFirePower = bestGun.getPower();
