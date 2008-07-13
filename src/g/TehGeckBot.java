@@ -225,9 +225,6 @@ public class TehGeckBot extends AdvancedRobot {
 		}
 	}
 
-	// for debugging with painting only
-	static Point2D.Double lastFuturePosition;
-
 	@Override
 	public void onPaint(Graphics2D g) {
 		if (target.exists()) {
