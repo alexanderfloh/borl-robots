@@ -21,9 +21,17 @@ public class TargetManager {
   }
   
   public void update() {
+    if(currentTarget != null && robot.getTime() - currentTarget.getTimeStamp() > 3) {
+      currentTarget = null;
+    }
+    
     for (GunManager gunManager : gunManagers.values()) {
       gunManager.update();
     }
+  }
+  
+  public void startRound() {
+    currentTarget = null;
   }
   
   public void onScannedRobot(ScannedRobotEvent event) {
@@ -64,7 +72,12 @@ public class TargetManager {
   }
 
   public void onPaint(Graphics2D g) {
-    
+    if(currentTarget != null) {
+      currentTarget.onPaint(g);
+    }
+    if(currentGunManager != null) {
+      currentGunManager.onPaint(g);
+    }
   }
 
   public void onRobotDeath(RobotDeathEvent event) {
