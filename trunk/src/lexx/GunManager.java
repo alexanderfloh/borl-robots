@@ -56,18 +56,7 @@ public class GunManager {
   private static class SimpleGunComparator implements Comparator<VirtualGun> {
 
     public int compare(VirtualGun o1, VirtualGun o2) {
-      if(hitQuotient(o1) < hitQuotient(o2))
-        return 1;
-      else if(hitQuotient(o1) > hitQuotient(o2))
-        return -1;
-      else
-        return 0;
-    }
-    
-    private double hitQuotient(VirtualGun g) {
-      if(g.getBulletsFired() == 0)
-        return 0;
-      return g.getBulletsHit() / g.getBulletsFired();
+      return o2.getBulletsHit() - o1.getBulletsHit();
     }
     
   }
