@@ -42,7 +42,6 @@ public class Target {
     this.distance = event.getDistance();
     this.velocity = event.getVelocity();
     this.timeStamp = event.getTime();
-    this.energy = event.getEnergy();
     this.bearingRadians = normalizeEnemyBearingRadians(event.getBearingRadians(), myHeadingRadians);    
     
     myPos = new Point2D.Double(robot.getX(), robot.getY());
@@ -50,7 +49,13 @@ public class Target {
     
     rectangle.x = enemyPos.x - DasBot.ROBOT_SIZE / 2;
     rectangle.y = enemyPos.y - DasBot.ROBOT_SIZE / 2;
-    
+
+    double newEnergy = event.getEnergy();
+    double energyDiff = this.energy - newEnergy;
+    if(energyDiff > 0 && energyDiff < 3.1) {
+      // target fired a shot
+    }
+    this.energy = newEnergy;
   }
 
   public String getTargetName() {
