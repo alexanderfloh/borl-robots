@@ -7,6 +7,7 @@ import static robocode.util.Utils.*;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -14,7 +15,6 @@ import java.util.Random;
 import robocode.AdvancedRobot;
 import robocode.Condition;
 import robocode.CustomEvent;
-import robocode.DeathEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
 import robocode.RobotDeathEvent;
@@ -26,7 +26,9 @@ import robocode.ScannedRobotEvent;
  */
 public class TehGeckBot extends AdvancedRobot {
 
-	private static final Map<String, AimingStrategy> aimingStrategyForEnemy = new HashMap<String, AimingStrategy>();
+	private final Map<String, VirtualGunArray> virtualGunsPerTarget = new HashMap<String, VirtualGunArray>();
+
+	public static final int ROBOT_SIZE = 36;
 
 	private final int maxGunTurnRemainingForFire = 3;
 	private final int maxScanAge = 20;
@@ -61,10 +63,6 @@ public class TehGeckBot extends AdvancedRobot {
 		strafe();
 	}
 
-	private boolean didTargetFire() {
-		return target.getEnergyDelta() <= -0.1 && target.getEnergyDelta() >= -3;
-	}
-
 	private boolean isOneOnOneFight() {
 		return getOthers() == 1;
 	}
@@ -75,6 +73,7 @@ public class TehGeckBot extends AdvancedRobot {
 		setAdjustRadarForGunTurn(true);
 
 		setColors(Color.cyan, Color.cyan, Color.BLUE);
+		setBulletColor(Color.cyan);
 
 		Condition closeToWallCondition = new Condition("closeToWall") {
 			@Override
@@ -94,12 +93,14 @@ public class TehGeckBot extends AdvancedRobot {
 			}
 		};
 		addCustomEvent(targetFired);
+
+		battleField = new Rectangle2D.Double(0, 0, getBattleFieldWidth(), getBattleFieldHeight());
 	}
 
-	private AimingStrategy getAimingStragegyForTarget(String targetName) {
-		if (!aimingStrategyForEnemy.containsKey(targetName))
-			aimingStrategyForEnemy.put(targetName, new AimingStrategy(this, targetName));
-		return aimingStrategyForEnemy.get(targetName);
+	private VirtualGunArray getVirtualGunArrayForTarget(String targetName) {
+		if (!virtualGunsPerTarget.containsKey(targetName))
+			virtualGunsPerTarget.put(targetName, new VirtualGunArray(this));
+		return virtualGunsPerTarget.get(targetName);
 	}
 
 	private double wallDistance() {
@@ -132,12 +133,18 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private void fight() {
-		double bulletPower = bulletPower();
-		getAimingStragegyForTarget(target.getName()).aimAtTarget(target, bulletPower);
+		VirtualGunArray gunArray = getVirtualGunArrayForTarget(target.getName());
+		gunArray.simulateFire(target);
+		VirtualGun bestGun = gunArray.getBestGun();
+		println("best gun = " + bestGun);
+
+		setTurnGunRight(normalizeRelativeAngle(bestGun.getAbsoluteBearingDegrees(target) - getGunHeading()));
+		double bulletPower = bestGun.getPower(target);
 		double gunTurnRemaining = abs(getGunTurnRemaining());
 
 		boolean shouldRamTarget = isOneOnOneFight() && target.exists() && target.getEnergy() < getEnergy()
 				&& getTime() - lastTimeTargetFired > 10;
+
 		if (shouldRamTarget) {
 			ramTarget();
 		}
@@ -145,26 +152,21 @@ public class TehGeckBot extends AdvancedRobot {
 			// our last shots - only fire if we kill our target for sure
 			if (isNear(gunTurnRemaining, 0) && target.exists() && isNear(target.getEnergy(), 0)) {
 				setFire(bulletPower);
-				println("firing last bullet at disabled target");
 			}
 		} else {
-			// fire if we are already in the right position
-			if (gunTurnRemaining <= maxGunTurnRemainingForFire) {
+			if (gunTurnRemaining <= maxGunTurnRemainingForFire)
 				setFire(bulletPower);
-			} else {
-				println("cannot fire - still need to turn gun " + Math.round(gunTurnRemaining) + "°");
-			}
 		}
 	}
 
 	private void ramTarget() {
-		setTurnRight(getHeading() - target.getMyHeading() + target.getBearing());
+		setTurnRight(target.getAbsoluteBearing() - getHeading());
 		setAhead(500);
 	}
 
 	private void strafe() {
 		// turn 90° to target
-		setTurnRight(normalizeAngle(target.getBearing() + 90));
+		setTurnRight(normalizeRelativeAngle(target.getBearing() + 90));
 		// change strafe direction after a random number of ticks
 		if (getTime() % (1 + random.nextInt(100)) == 0) {
 			changeStrafeDirection();
@@ -172,16 +174,8 @@ public class TehGeckBot extends AdvancedRobot {
 		setAhead(min(150, wallDistance() - 10) * strafeDirection);
 	}
 
-	private void println(String string) {
+	void println(String string) {
 		out.println(string);
-	}
-
-	private double bulletPower() {
-		if (1 == 1)
-			return 0;
-		if (target.getEnergy() <= 12)
-			return target.getEnergy() / 4.0;
-		return max(1.1, (min(3.0, 1200 / target.getDistance())));
 	}
 
 	@Override
@@ -202,7 +196,7 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private void turnRadarToTarget() {
-		setTurnRadarRight(normalizeAngle(target.getMyHeading() + target.getBearing() - getRadarHeading() + 22.5
+		setTurnRadarRight(normalizeRelativeAngle(target.getAbsoluteBearing() - getRadarHeading() + 22.5
 				* radarDirection));
 		radarDirection *= -1;
 	}
@@ -213,6 +207,8 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private long lastCloseToWallEventTime = 0;
+
+	private Rectangle2D.Double battleField;
 
 	@Override
 	public void onCustomEvent(CustomEvent event) {
@@ -235,31 +231,22 @@ public class TehGeckBot extends AdvancedRobot {
 	@Override
 	public void onPaint(Graphics2D g) {
 		if (target.exists()) {
-			drawCircle(g, 100, target.getPosition());
-			if (lastFuturePosition != null)
-				drawCircle(g, 10, lastFuturePosition);
+			target.onPaint(g);
+			getVirtualGunArrayForTarget(target.getName()).onPaint(g);
 		}
 	}
 
 	@Override
 	public void onRobotDeath(RobotDeathEvent event) {
 		if (target.getName().equals(event.getName())) {
-			getAimingStragegyForTarget(target.getName()).succeeded();
 			target.reset();
 		}
 	}
 
 	@Override
-	public void onDeath(DeathEvent event) {
-		if (isOneOnOneFight()) {
-			getAimingStragegyForTarget(target.getName()).failed();
-		}
-	}
-
-	@Override
 	public void onHitRobot(HitRobotEvent event) {
-		setTurnRadarRight(normalizeAngle(getHeading() + event.getBearing() - getRadarHeading()));
-		setTurnGunRight(normalizeAngle(getHeading() + event.getBearing()));
+		setTurnRadarRight(normalizeRelativeAngle(getHeading() + event.getBearing() - getRadarHeading()));
+		setTurnGunRight(normalizeRelativeAngle(getHeading() + event.getBearing() - getGunHeading()));
 		setFire(3);
 		execute();
 	}
@@ -272,8 +259,11 @@ public class TehGeckBot extends AdvancedRobot {
 		changeStrafeDirection();
 	}
 
-	private void drawCircle(Graphics2D g, int radius, Point2D.Double center) {
-		g.drawOval((int) center.getX() - radius / 2, (int) center.getY() - radius / 2, radius, radius);
+	public Point2D.Double getPosition() {
+		return new Point2D.Double(getX(), getY());
 	}
 
+	public Rectangle2D.Double getBattleField() {
+		return battleField;
+	}
 }
