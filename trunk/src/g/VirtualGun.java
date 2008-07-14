@@ -38,24 +38,26 @@ public abstract class VirtualGun {
 		for (Iterator<VirtualBullet> it = flyingBullets.iterator(); it.hasNext();) {
 			VirtualBullet bullet = it.next();
 			if (bullet.hitTarget(target)) {
-				bulletHitTarget();
+				hitBullets++;
 				it.remove();
 			} else if (!bullet.isWithinBattleField(geckBot.getBattleField())) {
-				bulletMissedTarget();
+				missedBullets++;
 				it.remove();
 			}
 		}
-	}
 
-	public int bulletMissedTarget() {
-		return missedBullets++;
-	}
-
-	public int bulletHitTarget() {
-		return hitBullets++;
+		// trim hit data -> thereby newer virtual bullets have more weight
+		int allBullets = hitBullets + missedBullets;
+		if(allBullets > 100) {
+			hitBullets = (int) round(hitBullets / 2.0);
+			missedBullets = (int) round(missedBullets / 2.0);
+			geckBot.println("trimming hit data");
+		}
 	}
 
 	double getPower(Target target) {
+		if(geckBot.getEnergy() < 20 && getHitRatio() < 0.25)
+			return 0.1;
 		if (target.getEnergy() <= 12)
 			return target.getEnergy() / 4.0;
 		return max(1.1, (min(3.0, 1200 / target.getDistance())));
@@ -66,7 +68,7 @@ public abstract class VirtualGun {
 	double getHitRatio() {
 		int allBullets = hitBullets + missedBullets;
 		if (allBullets == 0)
-			return 0;
+			return 1;
 		else
 			return (double) hitBullets / (double) allBullets;
 	}

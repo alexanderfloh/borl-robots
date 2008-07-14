@@ -24,9 +24,9 @@ import robocode.ScannedRobotEvent;
  * @author michi
  * @since 27.06.2008
  */
-public class TehGeckBot extends AdvancedRobot {
+public class TehGeckBot extends AdvancedRobot {      
 
-	private final Map<String, VirtualGunArray> virtualGunsPerTarget = new HashMap<String, VirtualGunArray>();
+	private static final Map<String, VirtualGunArray> virtualGunsPerTarget = new HashMap<String, VirtualGunArray>();
 
 	public static final int ROBOT_SIZE = 36;
 
@@ -142,8 +142,7 @@ public class TehGeckBot extends AdvancedRobot {
 		double bulletPower = bestGun.getPower(target);
 		double gunTurnRemaining = abs(getGunTurnRemaining());
 
-		boolean shouldRamTarget = isOneOnOneFight() && target.exists() && target.getEnergy() < getEnergy()
-				&& getTime() - lastTimeTargetFired > 10;
+		boolean shouldRamTarget = isOneOnOneFight() && target.exists() && (target.getEnergy() < getEnergy() || target.getEnergy() < 20) && getTime() - lastTimeTargetFired > 10;
 
 		if (shouldRamTarget) {
 			ramTarget();
