@@ -48,7 +48,7 @@ public abstract class VirtualGun {
 
 		// trim hit data -> thereby newer virtual bullets have more weight
 		int allBullets = hitBullets + missedBullets;
-		if(allBullets > 100) {
+		if (allBullets > 200) {
 			hitBullets = (int) round(hitBullets / 2.0);
 			missedBullets = (int) round(missedBullets / 2.0);
 			geckBot.println("trimming hit data");
@@ -56,7 +56,7 @@ public abstract class VirtualGun {
 	}
 
 	double getPower(Target target) {
-		if(geckBot.getEnergy() < 20 && getHitRatio() < 0.25)
+		if (geckBot.getEnergy() < 20 && getHitRatio() < 0.25)
 			return 0.1;
 		if (target.getEnergy() <= 12)
 			return target.getEnergy() / 4.0;

@@ -24,7 +24,7 @@ import robocode.ScannedRobotEvent;
  * @author michi
  * @since 27.06.2008
  */
-public class TehGeckBot extends AdvancedRobot {      
+public class TehGeckBot extends AdvancedRobot {
 
 	private static final Map<String, VirtualGunArray> virtualGunsPerTarget = new HashMap<String, VirtualGunArray>();
 
@@ -134,7 +134,6 @@ public class TehGeckBot extends AdvancedRobot {
 
 	private void fight() {
 		VirtualGunArray gunArray = getVirtualGunArrayForTarget(target.getName());
-		gunArray.simulateFire(target);
 		VirtualGun bestGun = gunArray.getBestGun();
 		println("best gun = " + bestGun);
 
@@ -142,7 +141,9 @@ public class TehGeckBot extends AdvancedRobot {
 		double bulletPower = bestGun.getPower(target);
 		double gunTurnRemaining = abs(getGunTurnRemaining());
 
-		boolean shouldRamTarget = isOneOnOneFight() && target.exists() && (target.getEnergy() < getEnergy() || target.getEnergy() < 20) && getTime() - lastTimeTargetFired > 10;
+		boolean shouldRamTarget = isOneOnOneFight() && target.exists()
+				&& (target.getEnergy() < getEnergy() || target.getEnergy() < 20)
+				&& getTime() - lastTimeTargetFired > 10;
 
 		if (shouldRamTarget) {
 			ramTarget();
@@ -151,10 +152,13 @@ public class TehGeckBot extends AdvancedRobot {
 			// our last shots - only fire if we kill our target for sure
 			if (isNear(gunTurnRemaining, 0) && target.exists() && isNear(target.getEnergy(), 0)) {
 				setFire(bulletPower);
+				gunArray.simulateFire(target);
 			}
 		} else {
-			if (gunTurnRemaining <= maxGunTurnRemainingForFire)
+			if (gunTurnRemaining <= maxGunTurnRemainingForFire) {
 				setFire(bulletPower);
+				gunArray.simulateFire(target);
+			}
 		}
 	}
 
