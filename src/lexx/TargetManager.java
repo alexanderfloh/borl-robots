@@ -1,9 +1,14 @@
 package lexx;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import robocode.Condition;
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
 
@@ -13,8 +18,12 @@ public class TargetManager {
   
   private Target currentTarget;
   private Map<String, Target> oldTargets = new LinkedHashMap<String, Target>();
+  private Condition currentEnemyFiredCondition;
   
   private DasBot robot;
+  
+  // TODO move this functionality
+  private List<TrackedBullet> enemyBullets = new LinkedList<TrackedBullet>();
 
   public TargetManager(DasBot robot) {
     this.robot = robot;
@@ -27,6 +36,14 @@ public class TargetManager {
     
     for (GunManager gunManager : gunManagers.values()) {
       gunManager.update();
+    }
+    
+    for(Iterator<TrackedBullet> it = enemyBullets.iterator(); it.hasNext(); ) {
+      TrackedBullet bullet = it.next();
+      bullet.update(robot.getTime());
+      if(!bullet.isWithinBattleField(robot.getBattleField())) {
+        it.remove();
+      }
     }
   }
   
@@ -54,11 +71,21 @@ public class TargetManager {
       // save old target
       if(currentTarget != null) {
         oldTargets.put(currentTarget.getTargetName(), currentTarget);
+        robot.removeCustomEvent(currentEnemyFiredCondition);
       }
       
-      // create new target
-      currentTarget = new Target(robot, event);
+      currentTarget = findOrCreateTarget(robot, event);
+      currentEnemyFiredCondition = new EnemyFiredCondition(currentTarget);
+      robot.addCustomEvent(currentEnemyFiredCondition);
+      
     }
+  }
+  
+  private Target findOrCreateTarget(DasBot robot, ScannedRobotEvent event) {
+    Target target = oldTargets.get(event.getName());
+    if(target == null) 
+      target = new Target(robot, event);
+    return target;
   }
   
   private void updateGunManager(ScannedRobotEvent event, Target newTarget) {
@@ -78,12 +105,25 @@ public class TargetManager {
     if(currentGunManager != null) {
       currentGunManager.onPaint(g);
     }
+    for (TrackedBullet bullet : enemyBullets) {
+      bullet.onPaint(g);
+    }
   }
 
   public void onRobotDeath(RobotDeathEvent event) {
     if (currentTarget != null && currentTarget.getTargetName().equals(event.getName())) {
       currentTarget = null;
     }    
+  }
+
+  public void trackEnemyBullet(double power, long time) {
+    int ticksDiff = (int)(robot.getTime() - time);
+    EnemyState fireState = currentTarget.getHistoricState(ticksDiff);
+    EnemyState scannedState = currentTarget.getHistoricState(ticksDiff + 1); 
+    
+    TrackedBullet enemyBullet = new TrackedBullet(fireState.getEnemyPosition(), scannedState.getBearingRadians() + Math.PI, power, fireState.getTimeStamp());
+    enemyBullet.setColor(Color.RED);
+    enemyBullets.add(enemyBullet);
   }
 
 }
