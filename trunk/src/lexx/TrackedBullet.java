@@ -15,6 +15,7 @@ public class TrackedBullet {
   
   private double power;
   private double velocity;
+  private Color color;
   
   public TrackedBullet(Point2D.Double origin, double headingRadians, double power, long currentTime) {
     this.origin = origin;
@@ -26,6 +27,8 @@ public class TrackedBullet {
     this.velocity = Utils.powerToVelocity(power);
     
     this.lastUpdate = currentTime;
+    
+    this.color = Color.WHITE;
   }
   
   public void update(long currentTime) {
@@ -47,9 +50,18 @@ public class TrackedBullet {
     return currentPos;
   }
 
+  public Color getColor() {
+    return color;
+  }
+
+  public void setColor(Color color) {
+    this.color = color;
+  }
+
   public void onPaint(Graphics2D g) {
-    Ellipse2D.Double bullet = new Ellipse2D.Double(currentPos.x - 5, currentPos.y - 5, 10, 10);
-    g.setColor(Color.WHITE);
-    g.draw(bullet);
+    int size = (int)(2 * power);
+    Ellipse2D.Double bullet = new Ellipse2D.Double(currentPos.x - size / 2, currentPos.y - size / 2, size, size);
+    g.setColor(color);
+    g.fill(bullet);
   }
 }

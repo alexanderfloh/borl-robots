@@ -8,6 +8,7 @@ import java.awt.geom.Point2D.Double;
 import java.util.Random;
 
 import robocode.AdvancedRobot;
+import robocode.CustomEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
 import robocode.RobotDeathEvent;
@@ -41,12 +42,6 @@ public class DasBot extends AdvancedRobot {
     }
 
     while (true) {
-      // if the target hasnt been updated for 3 ticks, remove it.
-      // if (targetManager.getCurrentTarget() != null &&
-      // targetManager.getCurrentTarget().getTimeStamp() < getTime() - 3) {
-      // currentTarget = null;
-      // }
-
       targetManager.update();
       if (targetManager.getCurrentTarget() == null) {
         setAdjustRadarForGunTurn(false);
@@ -154,6 +149,14 @@ public class DasBot extends AdvancedRobot {
   @Override
   public void onRobotDeath(RobotDeathEvent event) {
     targetManager.onRobotDeath(event);
+  }
+  
+  @Override
+  public void onCustomEvent(CustomEvent event) {
+    if(event.getCondition() instanceof EnemyFiredCondition) {
+      EnemyFiredCondition cond = (EnemyFiredCondition) event.getCondition();
+      targetManager.trackEnemyBullet(cond.getBulletPower(), event.getTime());
+    }
   }
 
   @Override
