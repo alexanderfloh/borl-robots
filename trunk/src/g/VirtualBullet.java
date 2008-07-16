@@ -20,7 +20,6 @@ public class VirtualBullet {
 		this.veloctiy = veloctiy;
 	}
 
-	// TODO use event to make sure we get update on every tick
 	void update(long time) {
 		double distanceTravelled = (time - this.time) * veloctiy;
 		position.x += sin(toRadians(directionDegrees)) * distanceTravelled;
