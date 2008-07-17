@@ -6,7 +6,9 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 
-public class TrackedBullet {
+import lexx.target.Target;
+
+public class VirtualBullet {
   private Point2D.Double origin;
   private double originalBearingRadians;
   
@@ -17,7 +19,7 @@ public class TrackedBullet {
   private double velocity;
   private Color color;
   
-  public TrackedBullet(Point2D.Double origin, double headingRadians, double power, long currentTime) {
+  public VirtualBullet(Point2D.Double origin, double headingRadians, double power, long currentTime) {
     this.origin = origin;
     this.currentPos = origin;
     

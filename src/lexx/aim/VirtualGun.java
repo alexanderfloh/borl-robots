@@ -1,13 +1,18 @@
-package lexx;
+package lexx.aim;
 
 import java.awt.Graphics2D;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import lexx.DasBot;
+import lexx.VirtualBullet;
+import lexx.Utils;
+import lexx.target.Target;
+
 public abstract class VirtualGun {
 
-  private List<TrackedBullet> trackedBullets = new LinkedList<TrackedBullet>();
+  private List<VirtualBullet> trackedBullets = new LinkedList<VirtualBullet>();
   
   private int bulletsFired;
   private int bulletsHit;
@@ -23,13 +28,13 @@ public abstract class VirtualGun {
   
   public void doFire() {
     robot.out.println("creating bullet with p = " + getPower() + " and v = " + Utils.powerToVelocity(getPower()));
-    trackedBullets.add(new TrackedBullet(robot.getPosition(), getTargetHeadingRadians(), getPower(), robot.getTime()));
+    trackedBullets.add(new VirtualBullet(robot.getPosition(), getTargetHeadingRadians(), getPower(), robot.getTime()));
     bulletsFired++;
   }
   
   public final void update() {
-    for (Iterator<TrackedBullet> it = trackedBullets.iterator(); it.hasNext();) {
-      TrackedBullet bullet = it.next();
+    for (Iterator<VirtualBullet> it = trackedBullets.iterator(); it.hasNext();) {
+      VirtualBullet bullet = it.next();
       bullet.update(robot.getTime());
       if(bullet.isTargetHit(target)) {
         bulletsHit++;
@@ -57,14 +62,14 @@ public abstract class VirtualGun {
     return bulletsMissed;
   }
 
-  protected abstract double getTargetHeadingRadians();
+  public abstract double getTargetHeadingRadians();
   
-  protected abstract double getPower();
+  public abstract double getPower();
   
   protected abstract void onUpdate();
 
   public void onPaint(Graphics2D g) {
-    for (TrackedBullet bullet : trackedBullets) {
+    for (VirtualBullet bullet : trackedBullets) {
       bullet.onPaint(g);
     }
   }

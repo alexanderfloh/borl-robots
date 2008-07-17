@@ -7,6 +7,10 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.Point2D.Double;
 import java.util.Random;
 
+import lexx.aim.VirtualGun;
+import lexx.target.EnemyFiredCondition;
+import lexx.target.TargetManager;
+
 import robocode.AdvancedRobot;
 import robocode.CustomEvent;
 import robocode.HitRobotEvent;
