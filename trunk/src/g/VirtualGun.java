@@ -10,6 +10,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 public abstract class VirtualGun {
+	private static final int MAX_BULLET_DATA = 500;
 	protected int hitBullets = 0;
 	protected int missedBullets = 0;
 	protected Collection<VirtualBullet> flyingBullets = new LinkedList<VirtualBullet>();
@@ -20,12 +21,17 @@ public abstract class VirtualGun {
 		this.geckBot = geckBot;
 	}
 
-	void simulateFire(Target target) {
+	/**
+	 * @param importance
+	 *            the importance of the bullet. E.g. virtual bullets that are fired at the same as real bullets are more
+	 *            important than other virtual bullets
+	 */
+	void simulateFire(Target target, int importance) {
 		long time = geckBot.getTime();
 		updateFlyingBullets(target, time);
 		double firePower = getPower(target);
 		VirtualBullet bullet = new VirtualBullet(getAbsoluteBearingDegrees(target), geckBot.getPosition(), time,
-				bulletSpeed(firePower));
+				bulletSpeed(firePower), importance);
 		flyingBullets.add(bullet);
 	}
 
@@ -38,20 +44,26 @@ public abstract class VirtualGun {
 		for (Iterator<VirtualBullet> it = flyingBullets.iterator(); it.hasNext();) {
 			VirtualBullet bullet = it.next();
 			if (bullet.hitTarget(target)) {
-				hitBullets++;
+				hitBullets += bullet.getImportance();
 				it.remove();
 			} else if (!bullet.isWithinBattleField(geckBot.getBattleField())) {
-				missedBullets++;
+				missedBullets += bullet.getImportance();
 				it.remove();
 			}
 		}
 
-		// trim hit data -> thereby newer virtual bullets have more weight
+		trimBulletData();
+	}
+
+	/**
+	 * Reduces the number of hit and missed bullets. Does not change the hit ratio. Thereby newer virtual bullets have
+	 * more weight.
+	 */
+	private void trimBulletData() {
 		int allBullets = hitBullets + missedBullets;
-		if (allBullets > 200) {
+		if (allBullets > MAX_BULLET_DATA) {
 			hitBullets = (int) round(hitBullets / 2.0);
 			missedBullets = (int) round(missedBullets / 2.0);
-			geckBot.println("trimming hit data");
 		}
 	}
 
