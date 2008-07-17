@@ -1,10 +1,13 @@
-package lexx;
+package lexx.aim;
 
 import java.awt.Graphics2D;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
+
+import lexx.DasBot;
+import lexx.target.Target;
 
 public class GunManager {
   private List<VirtualGun> guns;

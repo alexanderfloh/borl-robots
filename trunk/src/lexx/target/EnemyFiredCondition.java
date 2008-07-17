@@ -1,4 +1,4 @@
-package lexx;
+package lexx.target;
 
 import robocode.Condition;
 

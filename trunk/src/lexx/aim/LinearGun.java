@@ -1,24 +1,26 @@
-package lexx;
+package lexx.aim;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Point2D.Double;
 
-public class DirectGun extends VirtualGun {
-  private double percentOfMaxVelocity;
+import lexx.DasBot;
+import lexx.Utils;
+import lexx.target.Target;
+
+public class LinearGun extends VirtualGun {
   
-  public DirectGun(DasBot robot, Target target, double percentOfMaxVelocity) {
+  protected LinearGun(DasBot robot, Target target) {
     super(robot, target);
-    this.percentOfMaxVelocity = percentOfMaxVelocity;
   }
 
   @Override
-  protected double getPower() {
+  public double getPower() {
     return target.getMaxFirePower();
   }
 
   @Override
-  protected double getTargetHeadingRadians() {
-    return projectBearingRadiansFixedSpeed(getPower(), percentOfMaxVelocity);
+  public double getTargetHeadingRadians() {
+    return projectBearingRadians(getPower(), 1);
   }
 
   @Override
@@ -26,10 +28,10 @@ public class DirectGun extends VirtualGun {
     
   }
   
-  private double projectBearingRadiansFixedSpeed(double power, double percentOfMaxVelocity) {
+  private double projectBearingRadians(double power, double velocityFactor) {
     double ticks = ticksToTarget(power);
 
-    Point2D.Double projectedPos = Utils.translate(target.getEnemyPos(), target.getHeadingRadians(), ticks * (DasBot.MAX_SPEED * percentOfMaxVelocity));
+    Point2D.Double projectedPos = Utils.translate(target.getEnemyPos(), target.getHeadingRadians(), ticks * (target.getVelocity() * velocityFactor));
 
     Double myPosition = robot.getPosition();
     double relPosX = projectedPos.x - myPosition.x;

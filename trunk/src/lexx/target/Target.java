@@ -1,4 +1,4 @@
-package lexx;
+package lexx.target;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -7,6 +7,9 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.LinkedList;
 import java.util.List;
+
+import lexx.DasBot;
+import lexx.Utils;
 
 import robocode.AdvancedRobot;
 import robocode.ScannedRobotEvent;

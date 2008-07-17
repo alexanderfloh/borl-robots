@@ -1,4 +1,4 @@
-package lexx;
+package lexx.target;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -7,6 +7,10 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
+import lexx.DasBot;
+import lexx.VirtualBullet;
+import lexx.aim.GunManager;
 
 import robocode.Condition;
 import robocode.RobotDeathEvent;
@@ -23,7 +27,7 @@ public class TargetManager {
   private DasBot robot;
   
   // TODO move this functionality
-  private List<TrackedBullet> enemyBullets = new LinkedList<TrackedBullet>();
+  private List<VirtualBullet> enemyBullets = new LinkedList<VirtualBullet>();
 
   public TargetManager(DasBot robot) {
     this.robot = robot;
@@ -38,8 +42,8 @@ public class TargetManager {
       gunManager.update();
     }
     
-    for(Iterator<TrackedBullet> it = enemyBullets.iterator(); it.hasNext(); ) {
-      TrackedBullet bullet = it.next();
+    for(Iterator<VirtualBullet> it = enemyBullets.iterator(); it.hasNext(); ) {
+      VirtualBullet bullet = it.next();
       bullet.update(robot.getTime());
       if(!bullet.isWithinBattleField(robot.getBattleField())) {
         it.remove();
@@ -105,7 +109,7 @@ public class TargetManager {
     if(currentGunManager != null) {
       currentGunManager.onPaint(g);
     }
-    for (TrackedBullet bullet : enemyBullets) {
+    for (VirtualBullet bullet : enemyBullets) {
       bullet.onPaint(g);
     }
   }
@@ -121,7 +125,7 @@ public class TargetManager {
     EnemyState fireState = currentTarget.getHistoricState(ticksDiff);
     EnemyState scannedState = currentTarget.getHistoricState(ticksDiff + 1); 
     
-    TrackedBullet enemyBullet = new TrackedBullet(fireState.getEnemyPosition(), scannedState.getBearingRadians() + Math.PI, power, fireState.getTimeStamp());
+    VirtualBullet enemyBullet = new VirtualBullet(fireState.getEnemyPosition(), scannedState.getBearingRadians() + Math.PI, power, fireState.getTimeStamp());
     enemyBullet.setColor(Color.RED);
     enemyBullets.add(enemyBullet);
   }
