@@ -13,9 +13,15 @@ public class VirtualGunArray {
 		}
 	}
 
-	public void simulateFire(Target target) {
+	/**
+	 * @param target
+	 * @param importance
+	 *            the importance of the bullet. E.g. virtual bullets that are fired at the same as real bullets are more
+	 *            important than other virtual bullets
+	 */
+	public void simulateFire(Target target, int importance) {
 		for (VirtualGun gun : guns)
-			gun.simulateFire(target);
+			gun.simulateFire(target, importance);
 	}
 
 	public VirtualGun getBestGun() {

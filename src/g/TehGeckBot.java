@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Random;
 
 import robocode.AdvancedRobot;
+import robocode.Bullet;
 import robocode.Condition;
 import robocode.CustomEvent;
 import robocode.HitRobotEvent;
@@ -132,10 +133,17 @@ public class TehGeckBot extends AdvancedRobot {
 		setTurnRadarRight(360);
 	}
 
+	private VirtualGun lastBestGun; // only for logging
+
 	private void fight() {
 		VirtualGunArray gunArray = getVirtualGunArrayForTarget(target.getName());
 		VirtualGun bestGun = gunArray.getBestGun();
-		println("best gun = " + bestGun);
+
+		// logging
+		if (lastBestGun != bestGun) {
+			println("best gun = " + bestGun);
+			lastBestGun = bestGun;
+		}
 
 		setTurnGunRight(normalizeRelativeAngle(bestGun.getAbsoluteBearingDegrees(target) - getGunHeading()));
 		double bulletPower = bestGun.getPower(target);
@@ -151,15 +159,20 @@ public class TehGeckBot extends AdvancedRobot {
 		if (getEnergy() < 10) {
 			// our last shots - only fire if we kill our target for sure
 			if (isNear(gunTurnRemaining, 0) && target.exists() && isNear(target.getEnergy(), 0)) {
-				setFire(bulletPower);
-				gunArray.simulateFire(target);
+				doFire(gunArray, bulletPower);
 			}
 		} else {
 			if (gunTurnRemaining <= maxGunTurnRemainingForFire) {
-				setFire(bulletPower);
-				gunArray.simulateFire(target);
+				doFire(gunArray, bulletPower);
 			}
 		}
+	}
+
+	private void doFire(VirtualGunArray gunArray, double bulletPower) {
+		Bullet bullet = setFireBullet(bulletPower);
+		// if we really fire a bullet this one is very important for learning
+		int importance = (bullet != null) ? 30 : 1;
+		gunArray.simulateFire(target, importance);
 	}
 
 	private void ramTarget() {
