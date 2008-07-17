@@ -27,7 +27,7 @@ public abstract class VirtualGun {
   }
   
   public void doFire() {
-    robot.out.println("creating bullet with p = " + getPower() + " and v = " + Utils.powerToVelocity(getPower()));
+//    robot.out.println("creating bullet with p = " + getPower() + " and v = " + Utils.powerToVelocity(getPower()));
     trackedBullets.add(new VirtualBullet(robot.getPosition(), getTargetHeadingRadians(), getPower(), robot.getTime()));
     bulletsFired++;
   }

@@ -9,9 +9,12 @@ import java.util.Random;
 
 import lexx.aim.VirtualGun;
 import lexx.target.EnemyFiredCondition;
+import lexx.target.EnemyHitWallCondition;
+import lexx.target.Target;
 import lexx.target.TargetManager;
 
 import robocode.AdvancedRobot;
+import robocode.BulletHitEvent;
 import robocode.CustomEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
@@ -55,7 +58,7 @@ public class DasBot extends AdvancedRobot {
 
       if (targetManager.getCurrentTarget() != null) {
         VirtualGun bestGun = targetManager.getCurrentGunManager().getBestGun();
-        out.println("Using gun: " + bestGun);
+//        out.println("Using gun: " + bestGun);
         double maxFirePower = bestGun.getPower();
         double projectedBearingRadians = bestGun.getTargetHeadingRadians();
 
@@ -156,11 +159,26 @@ public class DasBot extends AdvancedRobot {
   }
   
   @Override
+  public void onBulletHit(BulletHitEvent event) {
+    Target currentTarget = targetManager.getTargetForName(event.getName());
+    if(currentTarget != null) {
+      currentTarget.logHit(event.getBullet().getPower(), event.getTime());
+    }
+  }
+  
+  @Override
   public void onCustomEvent(CustomEvent event) {
-    if(event.getCondition() instanceof EnemyFiredCondition) {
+    if (event.getCondition() instanceof EnemyHitWallCondition) {
+      EnemyHitWallCondition cond = (EnemyHitWallCondition) event.getCondition();
+      Target currentTarget = targetManager.getCurrentTarget();
+      if(currentTarget != null) {
+        currentTarget.logWallCollision(cond.getEnergyLoss(), event.getTime());
+      }
+    }
+    else if(event.getCondition() instanceof EnemyFiredCondition) {
       EnemyFiredCondition cond = (EnemyFiredCondition) event.getCondition();
       targetManager.trackEnemyBullet(cond.getBulletPower(), event.getTime());
-    }
+    } 
   }
 
   @Override
