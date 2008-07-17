@@ -51,7 +51,7 @@ public class GunManager {
 
   public VirtualGun getBestGun() {
     Collections.sort(guns, gunComparator);
-    robot.out.println(guns);
+//    robot.out.println(guns);
     return guns.get(0);
   }
   

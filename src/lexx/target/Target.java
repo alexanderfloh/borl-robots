@@ -10,7 +10,6 @@ import java.util.List;
 
 import lexx.DasBot;
 import lexx.Utils;
-
 import robocode.AdvancedRobot;
 import robocode.ScannedRobotEvent;
 
@@ -29,11 +28,15 @@ public class Target {
 
   private EnemyState currentEnemyState;
   private final List<EnemyState> history;
+  private final List<EnemyHitEvent> enemyHitLog;
+  private final List<WallCollisionEvent> enemyWallCollisionLog; 
 
   public Target(AdvancedRobot robot, ScannedRobotEvent event) {
     this.robot = robot;
     this.targetName = event.getName();
     this.history = new LinkedList<EnemyState>();
+    this.enemyHitLog = new LinkedList<EnemyHitEvent>();
+    this.enemyWallCollisionLog = new LinkedList<WallCollisionEvent>();
 
     this.rectangle = new Rectangle2D.Double();
     rectangle.height = DasBot.ROBOT_SIZE;
@@ -91,8 +94,32 @@ public class Target {
     return power;
   }
   
-  public void logHit() {
-    
+  public void logHit(double bulletPower, long timeStamp) {
+    enemyHitLog.add(0, new EnemyHitEvent(bulletPower, timeStamp));
+  }
+  
+  public void logWallCollision(double energyLoss, long timeStamp) {
+    enemyWallCollisionLog.add(0, new WallCollisionEvent(energyLoss, timeStamp));
+  }
+  
+  public EnemyHitEvent findHitEventForTimeStamp(long timeStamp) {
+    for (EnemyHitEvent hitEvent : enemyHitLog) {
+      if(timeStamp == hitEvent.getTimeStamp())
+        return hitEvent;
+      else if (timeStamp > hitEvent.getTimeStamp())
+        return null;
+    }
+    return null;
+  }
+  
+  public WallCollisionEvent findWallCollisionEventForTimeStamp(long timeStamp) {
+    for(WallCollisionEvent event : enemyWallCollisionLog) {
+      if(timeStamp == event.getTimeStamp())
+        return event;
+      else if(timeStamp > event.getTimeStamp())
+        return null;
+    }
+    return null;
   }
 
   public EnemyState getHistoricState(int ticks) {
