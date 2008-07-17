@@ -11,12 +11,10 @@ import lexx.target.Target;
 
 public class GunManager {
   private List<VirtualGun> guns;
-  private DasBot robot;
   
   private Comparator<VirtualGun> gunComparator = new SimpleGunComparator();
   
   public GunManager(DasBot robot, Target target) {
-    this.robot = robot;
     guns = new LinkedList<VirtualGun>();
     guns.add(new LinearGun(robot, target));
 //    guns.add(new DirectGun(robot, target, -1.0));
@@ -51,7 +49,6 @@ public class GunManager {
 
   public VirtualGun getBestGun() {
     Collections.sort(guns, gunComparator);
-//    robot.out.println(guns);
     return guns.get(0);
   }
   

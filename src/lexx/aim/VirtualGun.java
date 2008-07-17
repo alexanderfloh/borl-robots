@@ -7,7 +7,6 @@ import java.util.List;
 
 import lexx.DasBot;
 import lexx.VirtualBullet;
-import lexx.Utils;
 import lexx.target.Target;
 
 public abstract class VirtualGun {
@@ -27,7 +26,6 @@ public abstract class VirtualGun {
   }
   
   public void doFire() {
-//    robot.out.println("creating bullet with p = " + getPower() + " and v = " + Utils.powerToVelocity(getPower()));
     trackedBullets.add(new VirtualBullet(robot.getPosition(), getTargetHeadingRadians(), getPower(), robot.getTime()));
     bulletsFired++;
   }
