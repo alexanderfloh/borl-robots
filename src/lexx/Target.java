@@ -13,8 +13,10 @@ import robocode.ScannedRobotEvent;
 
 public class Target {
 
+  private static final int MAX_HISTORY_SIZE = 20;
   private final AdvancedRobot robot;
   private final String targetName;
+  
   private double distance;
   private double energy;
   private double myHeadingRadians;
@@ -23,7 +25,7 @@ public class Target {
   private Point2D.Double myPos;
 
   private EnemyState currentEnemyState;
-  private List<EnemyState> history;
+  private final List<EnemyState> history;
 
   public Target(AdvancedRobot robot, ScannedRobotEvent event) {
     this.robot = robot;
@@ -41,7 +43,7 @@ public class Target {
     if (currentEnemyState != null)
       history.add(0, currentEnemyState);
 
-    if (history.size() > 10)
+    if (history.size() > MAX_HISTORY_SIZE)
       history.remove(history.size() - 1);
 
     myHeadingRadians = robot.getHeadingRadians();
@@ -58,10 +60,6 @@ public class Target {
     rectangle.y = enemyPos.y - DasBot.ROBOT_SIZE / 2;
 
     double newEnergy = event.getEnergy();
-    double energyDiff = this.energy - newEnergy;
-    if (energyDiff > 0 && energyDiff < 3.1) {
-      // target fired a shot
-    }
     this.energy = newEnergy;
   }
 
@@ -89,6 +87,10 @@ public class Target {
 
     return power;
   }
+  
+  public void logHit() {
+    
+  }
 
   public EnemyState getHistoricState(int ticks) {
     return history.get(ticks);
@@ -101,8 +103,10 @@ public class Target {
   public void onPaint(Graphics2D g) {
     g.setColor(Color.RED);
     g.draw(rectangle);
-    int transparency = 50;
-    g.setPaint(new Color(0, 0, 255, transparency));
+    
+    int transparency = 10;
+    int age = 0;
+    g.setPaint(new Color(age, 255 - age, 0, transparency));
     for (EnemyState state : history) {
       Ellipse2D.Double circle = new Ellipse2D.Double(
           state.getEnemyPosition().x - DasBot.ROBOT_SIZE / 2, 
@@ -110,8 +114,9 @@ public class Target {
           DasBot.ROBOT_SIZE, 
           DasBot.ROBOT_SIZE);
       g.fill(circle);
-      
-      g.setPaint(new Color(0, 0, 255, (int)(transparency * 0.9)));
+      age += 255 / MAX_HISTORY_SIZE;
+      transparency = 255 / age;
+      g.setPaint(new Color(age, 255 - age, 0, transparency));
     }
   }
 
