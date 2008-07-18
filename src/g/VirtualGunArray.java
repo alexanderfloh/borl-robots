@@ -7,7 +7,12 @@ import java.util.List;
 public class VirtualGunArray {
 	private List<VirtualGun> guns = new ArrayList<VirtualGun>();
 
+	// only for logging
+	private VirtualGun lastBestGun;
+	private TehGeckBot geckBot;
+
 	public VirtualGunArray(TehGeckBot geckBot) {
+		this.geckBot = geckBot;
 		for (int i = -20; i < 20; i++) {
 			guns.add(new LinarGun(geckBot, 0.1 * i));
 		}
@@ -30,6 +35,13 @@ public class VirtualGunArray {
 			if (gun.getHitRatio() > bestGun.getHitRatio())
 				bestGun = gun;
 		}
+
+		// logging
+		if (lastBestGun != bestGun) {
+			geckBot.println("best gun = " + bestGun);
+			lastBestGun = bestGun;
+		}
+
 		return bestGun;
 	}
 
