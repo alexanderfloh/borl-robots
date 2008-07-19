@@ -5,6 +5,7 @@ import java.awt.geom.Point2D.Double;
 
 import lexx.DasBot;
 import lexx.Utils;
+import lexx.target.EnemyState;
 import lexx.target.Target;
 
 public class DirectGun extends VirtualGun {
@@ -33,7 +34,8 @@ public class DirectGun extends VirtualGun {
   private double projectBearingRadiansFixedSpeed(double power, double percentOfMaxVelocity) {
     double ticks = ticksToTarget(power);
 
-    Point2D.Double projectedPos = Utils.translate(target.getEnemyPos(), target.getHeadingRadians(), ticks * (DasBot.MAX_SPEED * percentOfMaxVelocity));
+    EnemyState currentTargetState = target.getCurrentState();
+    Point2D.Double projectedPos = Utils.translate(currentTargetState.getPosition(), currentTargetState.getHeadingRadians(), ticks * (DasBot.MAX_SPEED * percentOfMaxVelocity));
 
     Double myPosition = robot.getPosition();
     double relPosX = projectedPos.x - myPosition.x;
@@ -45,6 +47,6 @@ public class DirectGun extends VirtualGun {
   }
   
   private double ticksToTarget(double power) {
-    return (target.getDistance() / Utils.powerToVelocity(power));
+    return (target.getCurrentState().getDistance() / Utils.powerToVelocity(power));
   }
 }

@@ -11,17 +11,18 @@ public class EnemyHitWallCondition extends Condition {
   
   public EnemyHitWallCondition(Target target) {
     this.target = target;
-    this.lastVelocity = target.getVelocity();
+    this.lastVelocity = target.getCurrentState().getVelocity();
   }
   
   @Override
   public boolean test() {
-    double acceleration = Math.abs(Math.abs(lastVelocity) - Math.abs(target.getVelocity()));
+    EnemyState currentTargetState = target.getCurrentState();
+    double acceleration = Math.abs(Math.abs(lastVelocity) - Math.abs(currentTargetState.getVelocity()));
     if(acceleration > 2.1) {
       collisionDamage = Math.max(0, Math.abs(lastVelocity) / 2 - 1);
       return true;
     }
-    lastVelocity = target.getVelocity();
+    lastVelocity = currentTargetState.getVelocity();
     return false;
   }
 
