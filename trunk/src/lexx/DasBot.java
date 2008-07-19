@@ -10,6 +10,7 @@ import java.util.Random;
 import lexx.aim.VirtualGun;
 import lexx.target.EnemyFiredCondition;
 import lexx.target.EnemyHitWallCondition;
+import lexx.target.EnemyState;
 import lexx.target.Target;
 import lexx.target.TargetManager;
 
@@ -64,7 +65,8 @@ public class DasBot extends AdvancedRobot {
 
         // moving
         double headingRadians = getHeadingRadians();
-        double turnRadians = getTurnRadians(targetManager.getCurrentTarget().getBearingRadians(), headingRadians);
+        EnemyState currentTargetState = targetManager.getCurrentTarget().getCurrentState();
+        double turnRadians = getTurnRadians(currentTargetState.getBearingRadians(), headingRadians);
         doMove(turnRadians, headingRadians);
 
         // shooting
@@ -72,7 +74,7 @@ public class DasBot extends AdvancedRobot {
         setTurnGunRightRadians(turnGunRadians);
 
         // scanning
-        double turnRadarRadians = Utils.normalRelativeAngle(targetManager.getCurrentTarget().getBearingRadians()
+        double turnRadarRadians = Utils.normalRelativeAngle(currentTargetState.getBearingRadians()
             - getRadarHeadingRadians());
 
         if (Math.abs(turnGunRadians) < Math.PI / 100) {
@@ -101,9 +103,9 @@ public class DasBot extends AdvancedRobot {
   }
 
   private void doMove(double turnRadians, double headingRadians) {
-    double newHeading = headingRadians + turnRadians;
+    Angle newHeading = Angle.normalizedAbsoluteAngle(headingRadians + turnRadians);
     Double myPos = getPosition();
-    Point2D.Double p1 = lexx.Utils.translate(myPos, newHeading, (getVelocity() + wallStick) * direction);
+    Point2D.Double p1 = newHeading.projectPoint(myPos, (getVelocity() + wallStick) * direction); 
 
     if (!battleField.contains(p1)) {
       reverseDirection();

@@ -10,13 +10,13 @@ public class EnemyFiredCondition extends Condition {
   
   public EnemyFiredCondition(Target target) {
     this.target = target;
-    this.lastEnergy = target.getEnergy();
+    this.lastEnergy = target.getCurrentState().getEnergy();
   }
   
   @Override
   public boolean test() {
-    bulletPower = lastEnergy - target.getEnergy();
-    lastEnergy = target.getEnergy();
+    bulletPower = lastEnergy - target.getCurrentState().getEnergy();
+    lastEnergy = target.getCurrentState().getEnergy();
     return (bulletPower > 0 && bulletPower < 3.1);
   }
 

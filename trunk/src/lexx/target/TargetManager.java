@@ -36,7 +36,7 @@ public class TargetManager {
   }
 
   public void update() {
-    if (currentTarget != null && robot.getTime() - currentTarget.getTimeStamp() > 3) {
+    if (currentTarget != null && robot.getTime() - currentTarget.getCurrentState().getTimeStamp() > 3) {
       currentTarget = null;
     }
 
@@ -80,7 +80,7 @@ public class TargetManager {
   private void updateTarget(ScannedRobotEvent event) {
     if (currentTarget != null && currentTarget.getTargetName().equals(event.getName())) {
       currentTarget.update(event);
-    } else if (currentTarget == null || currentTarget.getDistance() > event.getDistance()) {
+    } else if (currentTarget == null || currentTarget.getCurrentState().getDistance() > event.getDistance()) {
       // save old target
       if (currentTarget != null) {
         oldTargets.put(currentTarget.getTargetName(), currentTarget);
@@ -142,7 +142,7 @@ public class TargetManager {
     boolean hitByBullet = enemyHitEvent != null && Utils.isNear(power, enemyHitEvent.getDamage());
     boolean wallCollision = enemyWallCollisionEvent != null;
     if (!hitByBullet && !wallCollision) {
-      VirtualBullet enemyBullet = new VirtualBullet(fireState.getEnemyPosition(), scannedState.getBearingRadians()
+      VirtualBullet enemyBullet = new VirtualBullet(fireState.getPosition(), scannedState.getBearingRadians()
           + Math.PI, power, fireState.getTimeStamp());
       enemyBullet.setColor(Color.RED);
       enemyBullets.add(enemyBullet);

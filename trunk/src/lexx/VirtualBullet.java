@@ -13,7 +13,7 @@ public class VirtualBullet {
   private double originalBearingRadians;
   
   private Point2D.Double currentPos;
-  private long lastUpdate;
+  private long timeStamp;
   
   private double power;
   private double velocity;
@@ -28,20 +28,18 @@ public class VirtualBullet {
     this.power = power;
     this.velocity = Utils.powerToVelocity(power);
     
-    this.lastUpdate = currentTime;
+    this.timeStamp = currentTime;
     
     this.color = Color.WHITE;
   }
   
   public void update(long currentTime) {
-    long tickDiff = currentTime - lastUpdate;
-    currentPos = Utils.translate(currentPos, originalBearingRadians, velocity * tickDiff);
-    
-    lastUpdate = currentTime;
+    long tickDiff = currentTime - timeStamp;
+    currentPos = Utils.translate(origin, originalBearingRadians, velocity * tickDiff);
   }
   
   public boolean isTargetHit(Target target) {
-    return target.getRectangle().contains(currentPos);
+    return target.getCurrentState().getRectangle().contains(currentPos);
   }
   
   public boolean isWithinBattleField(Rectangle2D.Double battleField) {
