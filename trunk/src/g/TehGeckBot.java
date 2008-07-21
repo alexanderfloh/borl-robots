@@ -27,7 +27,7 @@ public class TehGeckBot extends AdvancedRobot {
 
 	public static final int ROBOT_SIZE = 36;
 
-	private static final int maxGunTurnRemainingForFire = 3;
+	private static final int maxGunTurnRemainingForFire = 1;
 	private static final int maxScanAge = 20;
 
 	private static final Map<String, VirtualGunArray> virtualGunsPerTarget = new HashMap<String, VirtualGunArray>();
@@ -202,7 +202,8 @@ public class TehGeckBot extends AdvancedRobot {
 	public void onHitRobot(HitRobotEvent event) {
 		setTurnRadarRight(normalizeRelativeAngle(getHeading() + event.getBearing() - getRadarHeading()));
 		setTurnGunRight(normalizeRelativeAngle(getHeading() + event.getBearing() - getGunHeading()));
-		setFire(3);
+		if (getGunTurnRemaining() < 10)
+			setFire(3);
 		execute();
 	}
 
