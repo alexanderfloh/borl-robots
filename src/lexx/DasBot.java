@@ -17,6 +17,7 @@ import lexx.target.TargetManager;
 import robocode.AdvancedRobot;
 import robocode.BulletHitEvent;
 import robocode.CustomEvent;
+import robocode.HitByBulletEvent;
 import robocode.HitRobotEvent;
 import robocode.HitWallEvent;
 import robocode.RobotDeathEvent;
@@ -169,6 +170,14 @@ public class DasBot extends AdvancedRobot {
   }
   
   @Override
+  public void onHitByBullet(HitByBulletEvent event) {
+    Target currentTarget = targetManager.getCurrentTarget();
+    if(currentTarget != null) {
+      currentTarget.logHitByEnemy(new Angle(event.getHeadingRadians()), event.getPower(), event.getTime());
+    }
+  }
+  
+  @Override
   public void onCustomEvent(CustomEvent event) {
     if (event.getCondition() instanceof EnemyHitWallCondition) {
       EnemyHitWallCondition cond = (EnemyHitWallCondition) event.getCondition();
@@ -179,18 +188,23 @@ public class DasBot extends AdvancedRobot {
     }
     else if(event.getCondition() instanceof EnemyFiredCondition) {
       EnemyFiredCondition cond = (EnemyFiredCondition) event.getCondition();
-      targetManager.trackEnemyBullet(cond.getBulletPower(), event.getTime());
+      targetManager.getCurrentTarget().trackEnemyWave(cond.getBulletPower(), event.getTime());
     } 
   }
 
   @Override
   public void onPaint(Graphics2D g) {
-    super.onPaint(g);
+    g.setColor(Color.BLUE);
+    g.draw(getRectangle());
     targetManager.onPaint(g);
   }
 
   public Point2D.Double getPosition() {
     return new Point2D.Double(getX(), getY());
+  }
+  
+  public Rectangle2D.Double getRectangle() {
+    return new Rectangle2D.Double(getX() - DasBot.ROBOT_SIZE / 2, getY() - DasBot.ROBOT_SIZE / 2, DasBot.ROBOT_SIZE, DasBot.ROBOT_SIZE);
   }
 
   public Rectangle2D.Double getBattleField() {

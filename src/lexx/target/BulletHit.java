@@ -1,12 +1,20 @@
 package lexx.target;
 
-public class EnemyHitEvent {
+import lexx.Angle;
+
+public class BulletHit {
+  private final Angle bearing;
   private final long timeStamp;
   private final double bulletPower;
   
-  public EnemyHitEvent(double bulletPower, long timeStamp) {
+  public BulletHit(Angle bearing, double bulletPower, long timeStamp) {
+    this.bearing = bearing;
     this.bulletPower = bulletPower;
     this.timeStamp = timeStamp;
+  }
+
+  public Angle getBearing() {
+    return bearing;
   }
 
   public long getTimeStamp() {

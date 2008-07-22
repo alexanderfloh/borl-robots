@@ -1,7 +1,6 @@
 package lexx.aim;
 
 import java.awt.geom.Point2D;
-import java.awt.geom.Point2D.Double;
 
 import lexx.DasBot;
 import lexx.Utils;
@@ -35,15 +34,13 @@ public class DirectGun extends VirtualGun {
     double ticks = ticksToTarget(power);
 
     EnemyState currentTargetState = target.getCurrentState();
-    Point2D.Double projectedPos = Utils.translate(currentTargetState.getPosition(), currentTargetState.getHeadingRadians(), ticks * (DasBot.MAX_SPEED * percentOfMaxVelocity));
+    double projectedDistance = ticks * (DasBot.MAX_SPEED * percentOfMaxVelocity);
+    Point2D.Double targetPosition = currentTargetState.getPosition();
+    
+    Point2D.Double projectedPos = currentTargetState.getHeading().projectPoint(targetPosition, projectedDistance);
+    Point2D.Double myPosition = robot.getPosition();
 
-    Double myPosition = robot.getPosition();
-    double relPosX = projectedPos.x - myPosition.x;
-    double relPosY = projectedPos.y - myPosition.y;
-    double projectedDistance = myPosition.distance(projectedPos);
-
-    double projectedBearing = Utils.getBearingForPointRadians(relPosX, relPosY, projectedDistance);
-    return projectedBearing;
+    return Utils.getHeadingRadians(myPosition, projectedPos);
   }
   
   private double ticksToTarget(double power) {

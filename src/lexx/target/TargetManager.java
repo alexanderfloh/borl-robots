@@ -1,21 +1,14 @@
 package lexx.target;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 
 import lexx.DasBot;
-import lexx.VirtualBullet;
 import lexx.aim.GunManager;
-
 import robocode.Condition;
 import robocode.RobotDeathEvent;
 import robocode.ScannedRobotEvent;
-import robocode.util.Utils;
 
 public class TargetManager {
   private Map<String, GunManager> gunManagers = new LinkedHashMap<String, GunManager>();
@@ -27,7 +20,7 @@ public class TargetManager {
   private DasBot robot;
 
   // TODO move this functionality
-  private List<VirtualBullet> enemyBullets = new LinkedList<VirtualBullet>();
+  
   private Condition currentEnemyFiredCondition;
   private Condition currentEnemyHitWallCondition;
 
@@ -42,14 +35,6 @@ public class TargetManager {
 
     for (GunManager gunManager : gunManagers.values()) {
       gunManager.update();
-    }
-
-    for (Iterator<VirtualBullet> it = enemyBullets.iterator(); it.hasNext();) {
-      VirtualBullet bullet = it.next();
-      bullet.update(robot.getTime());
-      if (!bullet.isWithinBattleField(robot.getBattleField())) {
-        it.remove();
-      }
     }
   }
 
@@ -121,9 +106,6 @@ public class TargetManager {
     if (currentGunManager != null) {
       currentGunManager.onPaint(g);
     }
-    for (VirtualBullet bullet : enemyBullets) {
-      bullet.onPaint(g);
-    }
   }
 
   public void onRobotDeath(RobotDeathEvent event) {
@@ -131,22 +113,4 @@ public class TargetManager {
       currentTarget = null;
     }
   }
-
-  public void trackEnemyBullet(double power, long time) {
-    int ticksDiff = (int) (robot.getTime() - time);
-    EnemyState fireState = currentTarget.getHistoricState(ticksDiff);
-    EnemyState scannedState = currentTarget.getHistoricState(ticksDiff + 1);
-    EnemyHitEvent enemyHitEvent = currentTarget.findHitEventForTimeStamp(time - 1);
-    WallCollisionEvent enemyWallCollisionEvent = currentTarget.findWallCollisionEventForTimeStamp(time);
-   
-    boolean hitByBullet = enemyHitEvent != null && Utils.isNear(power, enemyHitEvent.getDamage());
-    boolean wallCollision = enemyWallCollisionEvent != null;
-    if (!hitByBullet && !wallCollision) {
-      VirtualBullet enemyBullet = new VirtualBullet(fireState.getPosition(), scannedState.getBearingRadians()
-          + Math.PI, power, fireState.getTimeStamp());
-      enemyBullet.setColor(Color.RED);
-      enemyBullets.add(enemyBullet);
-    }
-  }
-
 }
