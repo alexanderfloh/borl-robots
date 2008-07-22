@@ -6,6 +6,11 @@ import robocode.util.Utils;
 
 public class Angle {
   private final double angle;
+  
+  public static final Angle NORTH = new Angle(0);
+  public static final Angle EAST = new Angle(Math.PI / 2);
+  public static final Angle SOUTH = new Angle(Math.PI);
+  public static final Angle WEST = new Angle(Math.PI * 3 / 2);
 
   public Angle(double angle) {
     this.angle = angle;
@@ -15,8 +20,12 @@ public class Angle {
     return angle;
   }
   
-  public Angle addAngle(Angle other) {
+  public Angle add(Angle other) {
     return normalizedAbsoluteAngle(angle + other.getAngle());
+  }
+  
+  public Angle substract(Angle other) {
+    return normalizedAbsoluteAngle(angle - other.getAngle());
   }
   
   public Point2D.Double projectPoint(Point2D.Double origin, double distance) {

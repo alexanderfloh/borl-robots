@@ -2,34 +2,40 @@ package lexx.target;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Ellipse2D;
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import lexx.Angle;
 import lexx.DasBot;
-import robocode.AdvancedRobot;
+import lexx.Wave;
 import robocode.ScannedRobotEvent;
+import robocode.util.Utils;
 
 public class Target {
 
-  private static final int MAX_HISTORY_SIZE = 20;
+  private static final int MAX_HISTORY_SIZE = 100;
+  private static final int HIT_BUCKETS = 10;
 
-  private final AdvancedRobot robot;
+  private final DasBot robot;
   private final String targetName;
   
   private EnemyState currentEnemyState;
   
   private final List<EnemyState> history;
-  private final List<EnemyHitEvent> enemyHitLog;
-  private final List<WallCollisionEvent> enemyWallCollisionLog; 
+  private final List<BulletHit> myHitsLog;
+  private final List<WallCollisionEvent> enemyWallCollisionLog;
+  private final List<Wave> enemyWaves = new LinkedList<Wave>();
+  private final int[] hitBuckets = new int[HIT_BUCKETS];
 
-  public Target(AdvancedRobot robot, ScannedRobotEvent event) {
+  public Target(DasBot robot, ScannedRobotEvent event) {
     this.robot = robot;
     this.targetName = event.getName();
     this.history = new LinkedList<EnemyState>();
-    this.enemyHitLog = new LinkedList<EnemyHitEvent>();
+    this.myHitsLog = new LinkedList<BulletHit>();
     this.enemyWallCollisionLog = new LinkedList<WallCollisionEvent>();
 
     update(event);
@@ -48,11 +54,19 @@ public class Target {
     Angle myHeading = new Angle(robot.getHeadingRadians());
     Angle targetHeading = new Angle(event.getHeading());
     Angle targetBearing = new Angle(event.getBearingRadians());
-    Angle targetAbsoluteBearing = myHeading.addAngle(targetBearing);
+    Angle targetAbsoluteBearing = myHeading.add(targetBearing);
 
     Point2D.Double myPos = new Point2D.Double(robot.getX(), robot.getY());
     Point2D.Double enemyPos = targetAbsoluteBearing.projectPoint(myPos, distance);
     currentEnemyState = new EnemyState(enemyPos, targetHeading, targetAbsoluteBearing, event.getVelocity(), distance, energy, event.getTime());
+    
+    for (Iterator<Wave> it = enemyWaves.iterator(); it.hasNext();) {
+      Wave wave = it.next();
+      wave.update(robot.getTime());
+      if (!wave.isWithinBattleField(robot.getBattleField())) {
+        it.remove();
+      }
+    }
   }
 
   public String getTargetName() {
@@ -81,15 +95,34 @@ public class Target {
   }
   
   public void logHit(double bulletPower, long timeStamp) {
-    enemyHitLog.add(0, new EnemyHitEvent(bulletPower, timeStamp));
+    myHitsLog.add(0, new BulletHit(Angle.NORTH, bulletPower, timeStamp));
   }
   
   public void logWallCollision(double energyLoss, long timeStamp) {
     enemyWallCollisionLog.add(0, new WallCollisionEvent(energyLoss, timeStamp));
   }
   
-  public EnemyHitEvent findHitEventForTimeStamp(long timeStamp) {
-    for (EnemyHitEvent hitEvent : enemyHitLog) {
+  public void logHitByEnemy(Angle angle, double bulletPower, long timeStamp) {
+    Rectangle2D.Double robotRectangle = robot.getRectangle();
+    for (Wave wave : enemyWaves) {
+      boolean intersectsWave = robotRectangle.intersectsLine(wave.getWaveLine()) || robotRectangle.intersectsLine(wave.getSecondWaveLine());
+      if(intersectsWave && Utils.isNear(bulletPower, wave.getPower())) {
+        // this is very likely the bullet that hit us...
+        // calculate the difference between the original heading and the current heading towards the enemy
+        Angle actualHeading = lexx.Utils.getHeading(wave.getOrigin(), robot.getPosition());
+        Angle originalHeading = wave.getHeading();
+        Angle diff = actualHeading.substract(originalHeading);
+        int slot = (HIT_BUCKETS / 2) + (int)(Math.toDegrees(Utils.normalRelativeAngle(diff.getAngle())) / (180 / HIT_BUCKETS));
+        //TODO check array bounds
+        robot.out.println(slot);
+        hitBuckets[slot] += 1;
+      }
+    }
+    robot.out.println(Arrays.toString(hitBuckets));
+  }
+  
+  public BulletHit findHitEventForTimeStamp(long timeStamp) {
+    for (BulletHit hitEvent : myHitsLog) {
       if(timeStamp == hitEvent.getTimeStamp())
         return hitEvent;
       else if (timeStamp > hitEvent.getTimeStamp())
@@ -109,26 +142,31 @@ public class Target {
   }
 
   public EnemyState getHistoricState(int ticks) {
+    if(ticks < 0 || ticks >= history.size())
+      return null;
     return history.get(ticks);
+  }
+  
+  public void trackEnemyWave(double power, long time) {
+    int ticksDiff = (int) (robot.getTime() - time);
+    EnemyState fireState = getHistoricState(ticksDiff);
+    EnemyState scannedState = getHistoricState(ticksDiff + 1);
+    BulletHit enemyHitEvent = findHitEventForTimeStamp(time - 1);
+    WallCollisionEvent enemyWallCollisionEvent = findWallCollisionEventForTimeStamp(time);
+   
+    boolean hitByBullet = enemyHitEvent != null && Utils.isNear(power, enemyHitEvent.getDamage());
+    boolean wallCollision = enemyWallCollisionEvent != null;
+    if (fireState != null && !hitByBullet && !wallCollision) {
+      Wave wave = new Wave(fireState.getPosition(), new Angle(scannedState.getBearingRadians() + Math.PI), lexx.Utils.powerToVelocity(power), power, fireState.getTimeStamp());
+      enemyWaves.add(wave);
+    }
   }
 
   public void onPaint(Graphics2D g) {
     g.setColor(Color.RED);
     g.draw(currentEnemyState.getRectangle());
-    
-    int transparency = 10;
-    int age = 0;
-    g.setPaint(new Color(age, 255 - age, 0, transparency));
-    for (EnemyState state : history) {
-      Ellipse2D.Double circle = new Ellipse2D.Double(
-          state.getPosition().x - DasBot.ROBOT_SIZE / 2, 
-          state.getPosition().y - DasBot.ROBOT_SIZE / 2, 
-          DasBot.ROBOT_SIZE, 
-          DasBot.ROBOT_SIZE);
-      g.fill(circle);
-      age += 255 / MAX_HISTORY_SIZE;
-      transparency = 255 / age;
-      g.setPaint(new Color(age, 255 - age, 0, transparency));
+    for (Wave wave : enemyWaves) {
+      wave.onPaint(g);
     }
   }
 

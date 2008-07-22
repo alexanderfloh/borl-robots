@@ -10,7 +10,7 @@ import lexx.target.Target;
 
 public class VirtualBullet {
   private Point2D.Double origin;
-  private double originalBearingRadians;
+  private double headingRadians;
   
   private Point2D.Double currentPos;
   private long timeStamp;
@@ -23,7 +23,7 @@ public class VirtualBullet {
     this.origin = origin;
     this.currentPos = origin;
     
-    this.originalBearingRadians = headingRadians;
+    this.headingRadians = headingRadians;
     
     this.power = power;
     this.velocity = Utils.powerToVelocity(power);
@@ -35,7 +35,7 @@ public class VirtualBullet {
   
   public void update(long currentTime) {
     long tickDiff = currentTime - timeStamp;
-    currentPos = Utils.translate(origin, originalBearingRadians, velocity * tickDiff);
+    currentPos = Utils.translate(origin, headingRadians, velocity * tickDiff);
   }
   
   public boolean isTargetHit(Target target) {

@@ -1,8 +1,8 @@
 package lexx.aim;
 
 import java.awt.geom.Point2D;
-import java.awt.geom.Point2D.Double;
 
+import lexx.Angle;
 import lexx.DasBot;
 import lexx.Utils;
 import lexx.target.EnemyState;
@@ -33,16 +33,18 @@ public class LinearGun extends VirtualGun {
     double ticks = ticksToTarget(power);
 
     EnemyState currentTargetState = target.getCurrentState();
-    Point2D.Double projectedPos = Utils.translate(currentTargetState.getPosition(), currentTargetState.getHeadingRadians(), ticks * (currentTargetState.getVelocity() * velocityFactor));
-
-    Double myPosition = robot.getPosition();
-    double relPosX = projectedPos.x - myPosition.x;
-    double relPosY = projectedPos.y - myPosition.y;
-    double projectedDistance = myPosition.distance(projectedPos);
-
-    double projectedBearing = Utils.getBearingForPointRadians(relPosX, relPosY, projectedDistance);
+    Point2D.Double targetPosition = currentTargetState.getPosition();
+    Angle targetHeading = currentTargetState.getHeading();
+    double projectedDistance = ticks * (currentTargetState.getVelocity() * velocityFactor);
+    
+    Point2D.Double projectedPos = targetHeading.projectPoint(targetPosition, projectedDistance);
+    Point2D.Double myPosition = robot.getPosition();
+    
+    double projectedBearing = Utils.getHeadingRadians(myPosition, projectedPos);
     return projectedBearing;
   }
+
+
   
   private double ticksToTarget(double power) {
     return (target.getCurrentState().getDistance() / Utils.powerToVelocity(power));

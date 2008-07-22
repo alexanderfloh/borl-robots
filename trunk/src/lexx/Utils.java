@@ -11,14 +11,22 @@ public class Utils {
     return result;
   }
   
-  public static double getBearingForPointRadians(double deltaX, double deltaY, double distance) {
-    double bearing;
-    if (deltaY >= 0) {
-      bearing = Math.asin(deltaX / distance);
+  public static double getHeadingRadians(Point2D.Double origin, Point2D.Double target) {
+    double relPosX = target.x - origin.x;
+    double relPosY = target.y - origin.y;
+    double projectedDistance = origin.distance(target);
+    double heading;
+    if (relPosY >= 0) {
+      heading = Math.asin(relPosX / projectedDistance);
     } else {
-      bearing = Math.PI - Math.asin(deltaX / distance);
+      heading = Math.PI - Math.asin(relPosX / projectedDistance);
     }
-    return bearing;
+
+    return heading;
+  }
+  
+  public static Angle getHeading(Point2D.Double origin, Point2D.Double target) {
+    return Angle.normalizedAbsoluteAngle(getHeadingRadians(origin, target));
   }
   
   public static double powerToVelocity(double power) {
