@@ -27,7 +27,7 @@ public class TehGeckBot extends AdvancedRobot {
 
 	public static final int ROBOT_SIZE = 36;
 
-	private static final int maxGunTurnRemainingForFire = 1;
+	private static final int maxGunTurnRemainingForFire = 3;
 	private static final int maxScanAge = 20;
 
 	private static final Map<String, VirtualGunArray> virtualGunsPerTarget = new HashMap<String, VirtualGunArray>();
@@ -99,8 +99,6 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private void searchForTarget() {
-		println("searching for target");
-		// move around and turn radar
 		setTurnLeft(50);
 		setAhead(50);
 		setTurnRadarRight(360);
@@ -134,9 +132,7 @@ public class TehGeckBot extends AdvancedRobot {
 
 	private void doFire(VirtualGunArray gunArray, double bulletPower) {
 		Bullet bullet = setFireBullet(bulletPower);
-		// if we really fire a bullet this one is very important for learning
-		int importance = (bullet != null) ? 30 : 1;
-		gunArray.simulateFire(target, importance);
+		gunArray.simulateFire(target, bullet != null);
 	}
 
 	private void ramTarget() {

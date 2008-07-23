@@ -13,14 +13,14 @@ public class VirtualBullet {
 	private double veloctiy;
 	private double directionDegrees;
 	private Point2D.Double position;
-	private int importance;
+	private boolean isReal;
 
-	public VirtualBullet(double directionDegrees, Double position, long time, double veloctiy, int importance) {
+	public VirtualBullet(double directionDegrees, Double position, long time, double veloctiy, boolean isReal) {
 		this.directionDegrees = directionDegrees;
 		this.position = position;
 		this.time = time;
 		this.veloctiy = veloctiy;
-		this.importance = importance;
+		this.isReal = isReal;
 	}
 
 	void update(long time) {
@@ -31,8 +31,8 @@ public class VirtualBullet {
 		this.time = time;
 	}
 
-	public int getImportance() {
-		return importance;
+	public boolean isReal() {
+		return isReal;
 	}
 
 	boolean isWithinBattleField(Rectangle2D.Double battleFied) {
@@ -44,7 +44,7 @@ public class VirtualBullet {
 	}
 
 	public void onPaint(Graphics2D g) {
-		g.setColor((importance > 1) ? Color.cyan : Color.white);
+		g.setColor(isReal ? Color.cyan : Color.white);
 		Utils.drawCircle(g, 3, position);
 	}
 }
