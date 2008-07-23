@@ -10,7 +10,9 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 public abstract class VirtualGun {
-	private static final int MAX_BULLET_DATA = 500;
+	private static final int REAL_BULLET_IMPORTANCE = 30;
+	private static final int MAX_BULLET_DATA = REAL_BULLET_IMPORTANCE * 30;
+
 	protected int hitBullets = 0;
 	protected int missedBullets = 0;
 	protected Collection<VirtualBullet> flyingBullets = new LinkedList<VirtualBullet>();
@@ -22,16 +24,15 @@ public abstract class VirtualGun {
 	}
 
 	/**
-	 * @param importance
-	 *            the importance of the bullet. E.g. virtual bullets that are fired at the same as real bullets are more
-	 *            important than other virtual bullets
+	 * @param isRealBullet
+	 *            <code>true</code> indicates that the robot fired a real bullet.
 	 */
-	void simulateFire(Target target, int importance) {
+	void simulateFire(Target target, boolean isRealBullet) {
 		long time = geckBot.getTime();
 		updateFlyingBullets(target, time);
 		double firePower = getPower(target);
 		VirtualBullet bullet = new VirtualBullet(getAbsoluteBearingDegrees(target), geckBot.getPosition(), time,
-				bulletSpeed(firePower), importance);
+				bulletSpeed(firePower), isRealBullet);
 		flyingBullets.add(bullet);
 	}
 
@@ -43,11 +44,17 @@ public abstract class VirtualGun {
 		// check which bullets are still flying, and which missed or hit a target
 		for (Iterator<VirtualBullet> it = flyingBullets.iterator(); it.hasNext();) {
 			VirtualBullet bullet = it.next();
+
+			int importance = 1;
+			if (bullet.isReal()) {
+				importance = REAL_BULLET_IMPORTANCE;
+			}
+
 			if (bullet.hitTarget(target)) {
-				hitBullets += bullet.getImportance();
+				hitBullets += importance;
 				it.remove();
 			} else if (!bullet.isWithinBattleField(geckBot.getBattleField())) {
-				missedBullets += bullet.getImportance();
+				missedBullets += importance;
 				it.remove();
 			}
 		}
@@ -72,7 +79,7 @@ public abstract class VirtualGun {
 			return 0.1;
 		if (target.getEnergy() <= 12)
 			return target.getEnergy() / 4.0;
-		return max(1.1, (min(3.0, 1200 / target.getDistance())));
+		return max(1.1, (min(3.0, 900 / target.getDistance())));
 	}
 
 	abstract double getAbsoluteBearingDegrees(Target target);
