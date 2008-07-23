@@ -4,13 +4,13 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
 import lexx.Angle;
 import lexx.DasBot;
+import lexx.RiskManager;
 import lexx.Wave;
 import robocode.ScannedRobotEvent;
 import robocode.util.Utils;
@@ -18,7 +18,6 @@ import robocode.util.Utils;
 public class Target {
 
   private static final int MAX_HISTORY_SIZE = 100;
-  private static final int HIT_BUCKETS = 10;
 
   private final DasBot robot;
   private final String targetName;
@@ -29,7 +28,8 @@ public class Target {
   private final List<BulletHit> myHitsLog;
   private final List<WallCollisionEvent> enemyWallCollisionLog;
   private final List<Wave> enemyWaves = new LinkedList<Wave>();
-  private final int[] hitBuckets = new int[HIT_BUCKETS];
+  
+  private final RiskManager riskManager;
 
   public Target(DasBot robot, ScannedRobotEvent event) {
     this.robot = robot;
@@ -37,6 +37,7 @@ public class Target {
     this.history = new LinkedList<EnemyState>();
     this.myHitsLog = new LinkedList<BulletHit>();
     this.enemyWallCollisionLog = new LinkedList<WallCollisionEvent>();
+    this.riskManager = new RiskManager();
 
     update(event);
   }
@@ -56,7 +57,7 @@ public class Target {
     Angle targetBearing = new Angle(event.getBearingRadians());
     Angle targetAbsoluteBearing = myHeading.add(targetBearing);
 
-    Point2D.Double myPos = new Point2D.Double(robot.getX(), robot.getY());
+    Point2D.Double myPos = robot.getPosition();
     Point2D.Double enemyPos = targetAbsoluteBearing.projectPoint(myPos, distance);
     currentEnemyState = new EnemyState(enemyPos, targetHeading, targetAbsoluteBearing, event.getVelocity(), distance, energy, event.getTime());
     
@@ -109,16 +110,9 @@ public class Target {
       if(intersectsWave && Utils.isNear(bulletPower, wave.getPower())) {
         // this is very likely the bullet that hit us...
         // calculate the difference between the original heading and the current heading towards the enemy
-        Angle actualHeading = lexx.Utils.getHeading(wave.getOrigin(), robot.getPosition());
-        Angle originalHeading = wave.getHeading();
-        Angle diff = actualHeading.substract(originalHeading);
-        int slot = (HIT_BUCKETS / 2) + (int)(Math.toDegrees(Utils.normalRelativeAngle(diff.getAngle())) / (180 / HIT_BUCKETS));
-        //TODO check array bounds
-        robot.out.println(slot);
-        hitBuckets[slot] += 1;
+        riskManager.logHitByEnemy(wave, robot.getPosition());
       }
     }
-    robot.out.println(Arrays.toString(hitBuckets));
   }
   
   public BulletHit findHitEventForTimeStamp(long timeStamp) {
@@ -156,7 +150,7 @@ public class Target {
    
     boolean hitByBullet = enemyHitEvent != null && Utils.isNear(power, enemyHitEvent.getDamage());
     boolean wallCollision = enemyWallCollisionEvent != null;
-    if (fireState != null && !hitByBullet && !wallCollision) {
+    if (fireState != null && scannedState != null && !hitByBullet && !wallCollision) {
       Wave wave = new Wave(fireState.getPosition(), new Angle(scannedState.getBearingRadians() + Math.PI), lexx.Utils.powerToVelocity(power), power, fireState.getTimeStamp());
       enemyWaves.add(wave);
     }
@@ -172,5 +166,9 @@ public class Target {
 
   public EnemyState getCurrentState() {
     return currentEnemyState;
+  }
+
+  public RiskManager getRiskManager() {
+    return riskManager;
   }
 }
