@@ -114,7 +114,16 @@ public class DasBot extends AdvancedRobot {
       setAhead(distanceToMove);
     } else {
       setTurnRightRadians(turnRadians);
-
+//
+//      double movementAdvice = targetManager.getCurrentTarget().getRiskManager().getMovementAdvice();
+//      Angle movementAngle = new Angle(movementAdvice);
+//      Point2D.Double enemyPosition = targetManager.getCurrentTarget().getCurrentState().getPosition();
+//      Point2D.Double targetPoint = movementAngle.projectPoint(enemyPosition, targetManager.getCurrentTarget().getCurrentState().getDistance());
+//      if(movementAdvice > 0) {
+//        setAhead(targetPoint.distance(getPosition()));
+//      } else {
+//        setBack(targetPoint.distance(getPosition()));
+//      }
       if (getDistanceRemaining() == 0) {
         reverseDirection();
         double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
