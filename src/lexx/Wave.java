@@ -2,7 +2,6 @@ package lexx;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.Point2D.Double;
@@ -51,7 +50,7 @@ public class Wave {
   }
 
   public void update(long currentTime) {
-    long tickDiff = currentTime - timeStamp;
+    long tickDiff = currentTime - (timeStamp - 1);
     currentPos = heading.projectPoint(origin, velocity * tickDiff);
   }
   
@@ -63,27 +62,13 @@ public class Wave {
     return battleField.contains(currentPos);
   }
   
-  public Line2D.Double getWaveLine() {
-    double distance = origin.distance(currentPos);
-    Angle normalAngle = heading.add(Angle.EAST);
-    Double pointA = normalAngle.projectPoint(currentPos, distance / 2);
-    Double pointB = normalAngle.projectPoint(currentPos, -distance / 2);
-    return new Line2D.Double(pointA, pointB);
+  public double getMovedDistance() {
+    return origin.distance(currentPos);
   }
   
-  public Line2D.Double getSecondWaveLine() {
-    Point2D.Double shiftedPos = heading.projectPoint(currentPos, -DasBot.ROBOT_SIZE / 2);
-    double distance = origin.distance(shiftedPos);
-    Angle normalAngle = heading.add(Angle.EAST);
-    Double pointA = normalAngle.projectPoint(shiftedPos, distance / 2);
-    Double pointB = normalAngle.projectPoint(shiftedPos, -distance / 2);
-    return new Line2D.Double(pointA, pointB);
-  }
-
   public void onPaint(Graphics2D g) {
     g.setColor(Color.RED);
-    g.draw(getWaveLine());
-    g.setColor(Color.BLUE);
-    g.draw(getSecondWaveLine());
+    double movedDistance = getMovedDistance();
+    g.drawOval((int)(origin.x - movedDistance), (int)(origin.y - movedDistance), (int)(2 * movedDistance), (int)(2 * movedDistance));
   }
 }

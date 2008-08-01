@@ -2,6 +2,7 @@ package lexx;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.Point2D.Double;
@@ -35,6 +36,7 @@ public class DasBot extends AdvancedRobot {
   private Random random = new Random();
   private double wallStick = 120;
   private Rectangle2D.Double battleField;
+  private Point2D.Double moveTo;
 
   public DasBot() {
     if (targetManager == null) {
@@ -104,31 +106,62 @@ public class DasBot extends AdvancedRobot {
   }
 
   private void doMove(double turnRadians, double headingRadians) {
-    Angle newHeading = Angle.normalizedAbsoluteAngle(headingRadians + turnRadians);
-    Double myPos = getPosition();
-    Point2D.Double p1 = newHeading.projectPoint(myPos, (getVelocity() + wallStick) * direction); 
+//    Angle newHeading = Angle.normalizedAbsoluteAngle(headingRadians + turnRadians);
+//    Double myPos = getPosition();
+//    Point2D.Double p1 = newHeading.projectPoint(myPos, (getVelocity() + wallStick) * direction); 
 
-    if (!battleField.contains(p1)) {
-      reverseDirection();
-      double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
-      setAhead(distanceToMove);
-    } else {
-      setTurnRightRadians(turnRadians);
-//
-//      double movementAdvice = targetManager.getCurrentTarget().getRiskManager().getMovementAdvice();
-//      Angle movementAngle = new Angle(movementAdvice);
-//      Point2D.Double enemyPosition = targetManager.getCurrentTarget().getCurrentState().getPosition();
-//      Point2D.Double targetPoint = movementAngle.projectPoint(enemyPosition, targetManager.getCurrentTarget().getCurrentState().getDistance());
-//      if(movementAdvice > 0) {
-//        setAhead(targetPoint.distance(getPosition()));
-//      } else {
-//        setBack(targetPoint.distance(getPosition()));
-//      }
-      if (getDistanceRemaining() == 0) {
-        reverseDirection();
-        double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
-        setAhead(distanceToMove);
+//    if (!battleField.contains(p1)) {
+//      reverseDirection();
+//      double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
+//      setAhead(distanceToMove);
+//    } else {
+//      setTurnRightRadians(turnRadians);
+
+      Target currentTarget = targetManager.getCurrentTarget();
+      if(currentTarget != null) {
+        Angle movementAdvice = currentTarget.getRiskManager().getMovementAdvice();
+        out.println(Math.toDegrees(movementAdvice.getAngle()));
+        Wave nextWave = currentTarget.getNextWave();
+        if(nextWave != null) {
+           double distanceFromOrigin = nextWave.getOrigin().distance(getPosition());
+          Point2D.Double moveTo = movementAdvice.projectPoint(nextWave.getOrigin(), distanceFromOrigin);
+          int ticksToPoint = ticksToPoint(moveTo);
+          int ticksToHit = (int)((distanceFromOrigin - nextWave.getMovedDistance()) / nextWave.getVelocity());
+          if(ticksToPoint + 2 >= ticksToHit) {
+            // move!
+            moveToPoint(moveTo);
+          } else {
+            // prepare by turning in the right direction
+            Angle heading = lexx.Utils.getHeading(getPosition(), moveTo);
+            double angle = Utils.normalRelativeAngle(heading.getAngle());
+            if(Math.abs(angle) > Math.PI / 2) {
+              setTurnLeftRadians(Math.PI - angle);
+            } else {
+              setTurnRightRadians(angle);
+            }
+          }
+        }
       }
+//      if (getDistanceRemaining() == 0) {
+//        reverseDirection();
+//        double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
+//        setAhead(distanceToMove);
+//      }
+//    }
+  }
+
+  private void moveToPoint(Point2D.Double moveTo) {
+    this.moveTo = moveTo;
+    Angle heading = lexx.Utils.getHeading(getPosition(), moveTo);
+    double angle = Utils.normalRelativeAngle(heading.getAngle());
+    double distance = getPosition().distance(moveTo);
+    if(Math.abs(angle) > Math.PI / 2) {
+      // move backwards
+      setTurnLeftRadians(Math.PI - angle);
+      setBack(distance);
+    } else {
+      setTurnRightRadians(angle);
+      setAhead(distance);
     }
   }
 
@@ -148,6 +181,18 @@ public class DasBot extends AdvancedRobot {
       minTurn = robotTurnLeft;
     }
     return minTurn;
+  }
+  
+  private int ticksToPoint(Point2D.Double target) {
+    double remainingDistance = getPosition().distance(target);
+    int currentVelocity = 0;
+    int ticks = 0;
+    while(remainingDistance >= 0) {
+      currentVelocity = Math.min(8, currentVelocity + 2);
+      ticks++;
+      remainingDistance -= currentVelocity;
+    }
+    return ticks;
   }
 
   @Override
@@ -205,6 +250,11 @@ public class DasBot extends AdvancedRobot {
   public void onPaint(Graphics2D g) {
     g.setColor(Color.BLUE);
     g.draw(getRectangle());
+    if(moveTo != null) {
+      out.println(moveTo);
+      Line2D.Double l = new Line2D.Double(getPosition(), moveTo);
+      g.draw(l);
+    }
     targetManager.onPaint(g);
   }
 

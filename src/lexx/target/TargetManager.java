@@ -36,6 +36,12 @@ public class TargetManager {
     for (GunManager gunManager : gunManagers.values()) {
       gunManager.update();
     }
+    
+    if(currentTarget != null)
+      currentTarget.update();
+    for (Target target : oldTargets.values()) {
+      target.update();
+    }
   }
 
   public void startRound() {

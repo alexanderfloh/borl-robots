@@ -3,7 +3,6 @@ package lexx.target;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,7 +36,7 @@ public class Target {
     this.history = new LinkedList<EnemyState>();
     this.myHitsLog = new LinkedList<BulletHit>();
     this.enemyWallCollisionLog = new LinkedList<WallCollisionEvent>();
-    this.riskManager = new RiskManager();
+    this.riskManager = new RiskManager(robot);
 
     update(event);
   }
@@ -60,11 +59,13 @@ public class Target {
     Point2D.Double myPos = robot.getPosition();
     Point2D.Double enemyPos = targetAbsoluteBearing.projectPoint(myPos, distance);
     currentEnemyState = new EnemyState(enemyPos, targetHeading, targetAbsoluteBearing, event.getVelocity(), distance, energy, event.getTime());
-    
+  }
+  
+  public void update() {
     for (Iterator<Wave> it = enemyWaves.iterator(); it.hasNext();) {
       Wave wave = it.next();
       wave.update(robot.getTime());
-      if (!wave.isWithinBattleField(robot.getBattleField())) {
+      if(wave.getMovedDistance() > (wave.getOrigin().distance(robot.getPosition()) + DasBot.ROBOT_SIZE)) {
         it.remove();
       }
     }
@@ -104,9 +105,10 @@ public class Target {
   }
   
   public void logHitByEnemy(Angle angle, double bulletPower, long timeStamp) {
-    Rectangle2D.Double robotRectangle = robot.getRectangle();
+//    Rectangle2D.Double robotRectangle = robot.getRectangle();
     for (Wave wave : enemyWaves) {
-      boolean intersectsWave = robotRectangle.intersectsLine(wave.getWaveLine()) || robotRectangle.intersectsLine(wave.getSecondWaveLine());
+      double distanceDiff = wave.getMovedDistance() -  wave.getOrigin().distance(robot.getPosition());
+      boolean intersectsWave = distanceDiff >= 0 && distanceDiff <= DasBot.ROBOT_SIZE;
       if(intersectsWave && Utils.isNear(bulletPower, wave.getPower())) {
         // this is very likely the bullet that hit us...
         // calculate the difference between the original heading and the current heading towards the enemy
@@ -154,6 +156,12 @@ public class Target {
       Wave wave = new Wave(fireState.getPosition(), new Angle(scannedState.getBearingRadians() + Math.PI), lexx.Utils.powerToVelocity(power), power, fireState.getTimeStamp());
       enemyWaves.add(wave);
     }
+  }
+  
+  public Wave getNextWave() {
+    if(!enemyWaves.isEmpty())
+      return enemyWaves.get(0);
+    return null;
   }
 
   public void onPaint(Graphics2D g) {

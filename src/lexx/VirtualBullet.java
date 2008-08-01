@@ -59,9 +59,9 @@ public class VirtualBullet {
   }
 
   public void onPaint(Graphics2D g) {
-    int size = Math.max(2, (int)(2 * power));
-    Ellipse2D.Double bullet = new Ellipse2D.Double(currentPos.x - size / 2, currentPos.y - size / 2, size, size);
-    g.setColor(color);
-    g.fill(bullet);
+//    int size = Math.max(2, (int)(2 * power));
+//    Ellipse2D.Double bullet = new Ellipse2D.Double(currentPos.x - size / 2, currentPos.y - size / 2, size, size);
+//    g.setColor(color);
+//    g.fill(bullet);
   }
 }

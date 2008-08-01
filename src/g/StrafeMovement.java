@@ -12,8 +12,6 @@ public class StrafeMovement implements Movement {
 
 	private final Random random = new Random();
 	private long lastCloseToWallEventTime = 0;
-	private long lastStrafeDirectionChange;
-	private int STRAFE_DIRECTION_CHANGE_TIME_DELTA = 10;
 	private int strafeDirection = 1;
 
 	public StrafeMovement(TehGeckBot geckBot) {
@@ -22,7 +20,7 @@ public class StrafeMovement implements Movement {
 
 	public void move(Target target) {
 		// turn 90° to target
-		geckBot.setTurnRight(normalizeRelativeAngle(target.getBearing() + 90 - 30 * strafeDirection));
+		geckBot.setTurnRight(normalizeRelativeAngle(target.getBearing() + 90));
 		// change strafe direction after a random number of ticks
 		if (geckBot.getTime() % (1 + random.nextInt(100)) == 0) {
 			changeStrafeDirection();
@@ -31,10 +29,7 @@ public class StrafeMovement implements Movement {
 	}
 
 	private void changeStrafeDirection() {
-		if (geckBot.getTime() - lastStrafeDirectionChange >= STRAFE_DIRECTION_CHANGE_TIME_DELTA) {
-			strafeDirection *= -1;
-			lastStrafeDirectionChange = geckBot.getTime();
-		}
+		strafeDirection *= -1;
 	}
 
 	public void onCustomEvent(CustomEvent event) {
@@ -46,7 +41,7 @@ public class StrafeMovement implements Movement {
 			}
 			lastCloseToWallEventTime = geckBot.getTime();
 		} else if (event.getCondition().getName().equals(TargetFiredCondition.NAME)) {
-			// TODO do something here
+			changeStrafeDirection();
 		}
 	}
 }

@@ -1,20 +1,27 @@
 package lexx;
 
 import java.awt.geom.Point2D;
+import java.util.Arrays;
 
 import robocode.util.Utils;
 
 public class RiskManager {
   private static final int HIT_BUCKETS = 10;
   private final int[] hitBuckets = new int[HIT_BUCKETS];
+  private final DasBot robot;
+  
+  public RiskManager(DasBot robot) {
+    this.robot = robot;
+  }
   
   public void logHitByEnemy(Wave wave, Point2D.Double myPosition) {
     Angle actualHeading = lexx.Utils.getHeading(wave.getOrigin(), myPosition);
     Angle originalHeading = wave.getHeading();
     Angle diff = actualHeading.substract(originalHeading);
-    int slot = (HIT_BUCKETS / 2) + (int)(Math.toDegrees(Utils.normalRelativeAngle(diff.getAngle())) / (180 / HIT_BUCKETS));
+    int slot = (HIT_BUCKETS / 2) + (int)(Math.toDegrees(Utils.normalRelativeAngle(diff.getAngle())) / (90 / HIT_BUCKETS));
     //TODO check array bounds
     hitBuckets[slot] += 1;
+    robot.out.println(Arrays.toString(hitBuckets));
   }
   
   private int getAverageBucketValue() {
@@ -25,7 +32,7 @@ public class RiskManager {
     return sum / HIT_BUCKETS;
   }
   
-  public double getMovementAdvice() {
+  public Angle getMovementAdvice() {
     int average = getAverageBucketValue();
     int safeSlot = -1;
     boolean foundSafeSlot = false;
@@ -46,6 +53,6 @@ public class RiskManager {
     
     safeSlot -= HIT_BUCKETS / 2;
     
-    return Math.toRadians(safeSlot * 180 / HIT_BUCKETS);
+    return Angle.normalizedAbsoluteAngle(Math.PI + Math.toRadians(safeSlot * 90 / HIT_BUCKETS));
   }
 }
