@@ -1,0 +1,272 @@
+package lexx;
+
+import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.Point2D.Double;
+import java.util.Random;
+
+import lexx.aim.VirtualGun;
+import lexx.target.EnemyFiredCondition;
+import lexx.target.EnemyHitWallCondition;
+import lexx.target.EnemyState;
+import lexx.target.Target;
+import lexx.target.TargetManager;
+
+import robocode.AdvancedRobot;
+import robocode.BulletHitEvent;
+import robocode.CustomEvent;
+import robocode.HitByBulletEvent;
+import robocode.HitRobotEvent;
+import robocode.HitWallEvent;
+import robocode.RobotDeathEvent;
+import robocode.ScannedRobotEvent;
+import robocode.util.Utils;
+
+public class DasBot extends AdvancedRobot {
+  public static final int ROBOT_SIZE = 36;
+  public static final double MAX_SPEED = 8;
+
+  private static TargetManager targetManager;
+
+  private int direction = 1;
+  private int radarDirection = 1;
+  private Random random = new Random();
+  private double wallStick = 120;
+  private Rectangle2D.Double battleField;
+  private Point2D.Double moveTo;
+
+  public DasBot() {
+    if (targetManager == null) {
+      targetManager = new TargetManager(this);
+    }
+    targetManager.startRound();
+  }
+
+  @Override
+  public void run() {
+    if (battleField == null) {
+      battleField = new Rectangle2D.Double(0, 0, getBattleFieldWidth(), getBattleFieldHeight());
+      setColors(new Color(0, 128, 0), Color.green, Color.gray, Color.magenta, Color.magenta);
+    }
+
+    while (true) {
+      targetManager.update();
+      if (targetManager.getCurrentTarget() == null) {
+        setAdjustRadarForGunTurn(false);
+        setAdjustRadarForRobotTurn(false);
+        setTurnRadarLeftRadians(Math.PI / 4);
+      }
+
+      if (targetManager.getCurrentTarget() != null) {
+        VirtualGun bestGun = targetManager.getCurrentGunManager().getBestGun();
+//        out.println("Using gun: " + bestGun);
+        double maxFirePower = bestGun.getPower();
+        double projectedBearingRadians = bestGun.getTargetHeadingRadians();
+
+        // moving
+        double headingRadians = getHeadingRadians();
+        EnemyState currentTargetState = targetManager.getCurrentTarget().getCurrentState();
+        double turnRadians = getTurnRadians(currentTargetState.getBearingRadians(), headingRadians);
+        doMove(turnRadians, headingRadians);
+
+        // shooting
+        double turnGunRadians = Utils.normalRelativeAngle((projectedBearingRadians - getGunHeadingRadians()));
+        setTurnGunRightRadians(turnGunRadians);
+
+        // scanning
+        double turnRadarRadians = Utils.normalRelativeAngle(currentTargetState.getBearingRadians()
+            - getRadarHeadingRadians());
+
+        if (Math.abs(turnGunRadians) < Math.PI / 100) {
+          if (maxFirePower < 0.1) {
+            // TODO: get closer to the target
+          } else {
+            if (Utils.isNear(getGunHeat(), 0)) {
+              setFireBullet(maxFirePower);
+              targetManager.getCurrentGunManager().trackFire();
+            }
+          }
+        }
+
+        setAdjustRadarForRobotTurn(true);
+        setAdjustRadarForGunTurn(true);
+
+        if (getRadarTurnRemainingRadians() == 0) {
+          setTurnRadarRightRadians(turnRadarRadians + ((Math.PI / 12) * radarDirection));
+          radarDirection *= -1;
+        }
+
+      }
+
+      execute();
+    }
+  }
+
+  private void doMove(double turnRadians, double headingRadians) {
+//    Angle newHeading = Angle.normalizedAbsoluteAngle(headingRadians + turnRadians);
+//    Double myPos = getPosition();
+//    Point2D.Double p1 = newHeading.projectPoint(myPos, (getVelocity() + wallStick) * direction); 
+
+//    if (!battleField.contains(p1)) {
+//      reverseDirection();
+//      double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
+//      setAhead(distanceToMove);
+//    } else {
+//      setTurnRightRadians(turnRadians);
+
+      Target currentTarget = targetManager.getCurrentTarget();
+      if(currentTarget != null) {
+        Angle movementAdvice = currentTarget.getRiskManager().getMovementAdvice();
+        out.println(Math.toDegrees(movementAdvice.getAngle()));
+        Wave nextWave = currentTarget.getNextWave();
+        if(nextWave != null) {
+           double distanceFromOrigin = nextWave.getOrigin().distance(getPosition());
+          Point2D.Double moveTo = movementAdvice.projectPoint(nextWave.getOrigin(), distanceFromOrigin);
+          int ticksToPoint = ticksToPoint(moveTo);
+          int ticksToHit = (int)((distanceFromOrigin - nextWave.getMovedDistance()) / nextWave.getVelocity());
+          if(ticksToPoint + 2 >= ticksToHit) {
+            // move!
+            moveToPoint(moveTo);
+          } else {
+            // prepare by turning in the right direction
+            Angle heading = lexx.Utils.getHeading(getPosition(), moveTo);
+            double angle = Utils.normalRelativeAngle(heading.getAngle());
+            if(Math.abs(angle) > Math.PI / 2) {
+              setTurnLeftRadians(Math.PI - angle);
+            } else {
+              setTurnRightRadians(angle);
+            }
+          }
+        }
+      }
+//      if (getDistanceRemaining() == 0) {
+//        reverseDirection();
+//        double distanceToMove = 120 * (1 + random.nextDouble()) * direction;
+//        setAhead(distanceToMove);
+//      }
+//    }
+  }
+
+  private void moveToPoint(Point2D.Double moveTo) {
+    this.moveTo = moveTo;
+    Angle heading = lexx.Utils.getHeading(getPosition(), moveTo);
+    double angle = Utils.normalRelativeAngle(heading.getAngle());
+    double distance = getPosition().distance(moveTo);
+    if(Math.abs(angle) > Math.PI / 2) {
+      // move backwards
+      setTurnLeftRadians(Math.PI - angle);
+      setBack(distance);
+    } else {
+      setTurnRightRadians(angle);
+      setAhead(distance);
+    }
+  }
+
+  private void reverseDirection() {
+    direction = direction * -1;
+  }
+
+  private double getTurnRadians(double projectedBearingRadians, double headingRadians) {
+    double robotTurnRight = projectedBearingRadians - headingRadians + Math.PI / 2;
+
+    double robotTurnLeft = -(Math.PI - robotTurnRight);
+
+    double minTurn;
+    if (Math.abs(robotTurnRight) < Math.abs(robotTurnLeft)) {
+      minTurn = robotTurnRight;
+    } else {
+      minTurn = robotTurnLeft;
+    }
+    return minTurn;
+  }
+  
+  private int ticksToPoint(Point2D.Double target) {
+    double remainingDistance = getPosition().distance(target);
+    int currentVelocity = 0;
+    int ticks = 0;
+    while(remainingDistance >= 0) {
+      currentVelocity = Math.min(8, currentVelocity + 2);
+      ticks++;
+      remainingDistance -= currentVelocity;
+    }
+    return ticks;
+  }
+
+  @Override
+  public void onHitWall(HitWallEvent event) {
+    out.println("ouch, hit a wall!");
+  }
+
+  @Override
+  public void onHitRobot(HitRobotEvent event) {
+    reverseDirection();
+  }
+
+  @Override
+  public void onScannedRobot(ScannedRobotEvent event) {
+    targetManager.onScannedRobot(event);
+  }
+
+  @Override
+  public void onRobotDeath(RobotDeathEvent event) {
+    targetManager.onRobotDeath(event);
+  }
+  
+  @Override
+  public void onBulletHit(BulletHitEvent event) {
+    Target currentTarget = targetManager.getTargetForName(event.getName());
+    if(currentTarget != null) {
+      currentTarget.logHit(event.getBullet().getPower(), event.getTime());
+    }
+  }
+  
+  @Override
+  public void onHitByBullet(HitByBulletEvent event) {
+    Target currentTarget = targetManager.getCurrentTarget();
+    if(currentTarget != null) {
+      currentTarget.logHitByEnemy(new Angle(event.getHeadingRadians()), event.getPower(), event.getTime());
+    }
+  }
+  
+  @Override
+  public void onCustomEvent(CustomEvent event) {
+    if (event.getCondition() instanceof EnemyHitWallCondition) {
+      EnemyHitWallCondition cond = (EnemyHitWallCondition) event.getCondition();
+      Target currentTarget = targetManager.getCurrentTarget();
+      if(currentTarget != null) {
+        currentTarget.logWallCollision(cond.getEnergyLoss(), event.getTime());
+      }
+    }
+    else if(event.getCondition() instanceof EnemyFiredCondition) {
+      EnemyFiredCondition cond = (EnemyFiredCondition) event.getCondition();
+      targetManager.getCurrentTarget().trackEnemyWave(cond.getBulletPower(), event.getTime());
+    } 
+  }
+
+  @Override
+  public void onPaint(Graphics2D g) {
+    g.setColor(Color.BLUE);
+    g.draw(getRectangle());
+    if(moveTo != null) {
+      out.println(moveTo);
+      Line2D.Double l = new Line2D.Double(getPosition(), moveTo);
+      g.draw(l);
+    }
+    targetManager.onPaint(g);
+  }
+
+  public Point2D.Double getPosition() {
+    return new Point2D.Double(getX(), getY());
+  }
+  
+  public Rectangle2D.Double getRectangle() {
+    return new Rectangle2D.Double(getX() - DasBot.ROBOT_SIZE / 2, getY() - DasBot.ROBOT_SIZE / 2, DasBot.ROBOT_SIZE, DasBot.ROBOT_SIZE);
+  }
+
+  public Rectangle2D.Double getBattleField() {
+    return battleField;
+  }
+}
