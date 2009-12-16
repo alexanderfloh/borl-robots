@@ -33,7 +33,6 @@ public class TehGeckBot extends AdvancedRobot {
 	private static final Map<String, VirtualGunArray> virtualGunsPerTarget = new HashMap<String, VirtualGunArray>();
 	private Rectangle2D.Double battleField;
 	private int radarDirection = 1;
-	private long lastTimeTargetFired;
 	private final Target target = new Target(this);
 	private Movement movement = new StrafeMovement(this);
 
@@ -65,10 +64,6 @@ public class TehGeckBot extends AdvancedRobot {
 
 	private void move() {
 		movement.move(target);
-	}
-
-	private boolean isOneOnOneFight() {
-		return getOthers() == 1;
 	}
 
 	private VirtualGunArray getVirtualGunArrayForTarget(String targetName) {
@@ -110,14 +105,6 @@ public class TehGeckBot extends AdvancedRobot {
 		setTurnGunRight(normalizeRelativeAngle(bestGun.getAbsoluteBearingDegrees(target) - getGunHeading()));
 		double bulletPower = bestGun.getPower(target);
 		double gunTurnRemaining = abs(getGunTurnRemaining());
-
-		boolean shouldRamTarget = isOneOnOneFight() && target.exists()
-				&& (target.getEnergy() < getEnergy() || target.getEnergy() < 20)
-				&& getTime() - lastTimeTargetFired > 10;
-
-		if (shouldRamTarget) {
-			ramTarget();
-		}
 		if (getEnergy() < 10) {
 			// our last shots - only fire if we kill our target for sure
 			if (isNear(gunTurnRemaining, 0) && target.exists() && isNear(target.getEnergy(), 0)) {
@@ -135,11 +122,6 @@ public class TehGeckBot extends AdvancedRobot {
 		gunArray.simulateFire(target, bullet != null);
 	}
 
-	private void ramTarget() {
-		setTurnRight(target.getAbsoluteBearing() - getHeading());
-		setAhead(500);
-	}
-
 	void println(String string) {
 		out.println(string);
 	}
@@ -153,7 +135,7 @@ public class TehGeckBot extends AdvancedRobot {
 	}
 
 	private boolean isBetterTarget(ScannedRobotEvent e) {
-		if (isNear(e.getEnergy(), 0))
+		if (e.getEnergy() < 5)
 			return true;
 		if (isNear(e.getVelocity(), 0))
 			return true;
@@ -174,9 +156,6 @@ public class TehGeckBot extends AdvancedRobot {
 	@Override
 	public void onCustomEvent(CustomEvent event) {
 		movement.onCustomEvent(event);
-		if (event.getCondition().getName().equals("targetFired")) {
-			lastTimeTargetFired = getTime();
-		}
 	}
 
 	@Override
